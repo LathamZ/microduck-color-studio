@@ -1,0 +1,1933 @@
+{
+  "schemaVersion": 1,
+  "modelId": "microduck-walk-v1",
+  "name": "Microduck · 步行装配",
+  "units": "mm",
+  "coordinateSystem": "Y-up, front +Z",
+  "license": "CC-BY-NC-SA-4.0",
+  "source": "https://github.com/pollen-robotics/microduck_rl",
+  "upstreamRevision": "2fa62b8",
+  "geometryNote": "Display geometry derived from the original XL330 simulation assembly; not an HD1910 manufacturing or fit reference. Original face count retained for visual fidelity. Optional roller skates are not included.",
+  "bounds": [
+    [
+      -51.777099609375,
+      -106.52661895751953,
+      -70.5
+    ],
+    [
+      92.29002380371094,
+      157.4493865966797,
+      70.5
+    ]
+  ],
+  "geometryUrl": "microduck.glb",
+  "uiNote": "原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。",
+  "colorGroups": [
+    {
+      "id": "primary",
+      "name": "主色"
+    },
+    {
+      "id": "structure",
+      "name": "结构"
+    },
+    {
+      "id": "accent",
+      "name": "点缀"
+    }
+  ],
+  "parts": [
+    {
+      "id": "01-01-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -5.0,
+          -5.0,
+          -28.5
+        ],
+        [
+          17.0,
+          -1.0,
+          -6.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-02-right_shell",
+      "name": "右壳",
+      "sourceName": "right_shell",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "primary",
+      "printable": true,
+      "plate": 1,
+      "defaultColor": "#F1EFE7",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -46.398,
+          0.334,
+          0.5
+        ],
+        [
+          34.5,
+          42.026,
+          32.264
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-03-banana_pcb_locker",
+      "name": "香蕉形PCB锁扣",
+      "sourceName": "banana_pcb_locker",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 1388,
+      "bounds": [
+        [
+          -32.3,
+          31.452,
+          -27.025
+        ],
+        [
+          -28.5,
+          38.105,
+          27.025
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-04-trunk_base",
+      "name": "躯干底座",
+      "sourceName": "trunk_base",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 3698,
+      "bounds": [
+        [
+          -19.0,
+          -1.0,
+          -28.5
+        ],
+        [
+          17.0,
+          2.0,
+          28.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-05-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -18.5,
+          -3.0,
+          -27.5
+        ],
+        [
+          15.5,
+          26.0,
+          -7.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-06-power_support",
+      "name": "电源支架",
+      "sourceName": "power_support",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 12832,
+      "bounds": [
+        [
+          -31.0,
+          -44.068,
+          -27.25
+        ],
+        [
+          -14.0,
+          39.422,
+          27.25
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-07-np_f970",
+      "name": "NPF970电池",
+      "sourceName": "np_f970",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#535960",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -46.833,
+          -39.38,
+          -19.3
+        ],
+        [
+          -25.076,
+          31.671,
+          19.308
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-08-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -18.5,
+          -3.0,
+          7.5
+        ],
+        [
+          15.5,
+          26.0,
+          27.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-09-left_shell",
+      "name": "左壳",
+      "sourceName": "left_shell",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "primary",
+      "printable": true,
+      "plate": 1,
+      "defaultColor": "#F1EFE7",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -46.39,
+          0.257,
+          -31.764
+        ],
+        [
+          34.5,
+          41.948,
+          1.95
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "01-10-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "躯干主体",
+      "assemblyId": "01",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -5.0,
+          -5.0,
+          6.5
+        ],
+        [
+          17.0,
+          -1.0,
+          28.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "02-01-yaw2roll",
+      "name": "偏航转横滚",
+      "sourceName": "yaw2roll",
+      "assembly": "左髋yaw-roll",
+      "assemblyId": "02",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 12404,
+      "bounds": [
+        [
+          -8.5,
+          -22.5,
+          -29.0
+        ],
+        [
+          17.3,
+          -2.0,
+          -6.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "02-02-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "左髋yaw-roll",
+      "assemblyId": "02",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -8.5,
+          -42.0,
+          -27.5
+        ],
+        [
+          20.5,
+          -8.0,
+          -7.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "02-03-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "左髋yaw-roll",
+      "assemblyId": "02",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          18.5,
+          -28.5,
+          -28.5
+        ],
+        [
+          22.5,
+          -6.5,
+          -6.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "02-04-bearing_roll",
+      "name": "横滚轴承压盖",
+      "sourceName": "bearing_roll",
+      "assembly": "左髋yaw-roll",
+      "assemblyId": "02",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 2420,
+      "bounds": [
+        [
+          15.5,
+          -42.0,
+          -29.0
+        ],
+        [
+          18.5,
+          -2.0,
+          -6.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "03-01-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "左髋roll",
+      "assemblyId": "03",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -7.0,
+          -28.5,
+          -42.5
+        ],
+        [
+          15.0,
+          -6.5,
+          -38.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "03-02-hip_l",
+      "name": "髋部左",
+      "sourceName": "hip_l",
+      "assembly": "左髋roll",
+      "assemblyId": "03",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -5.5,
+          -27.0,
+          -40.45
+        ],
+        [
+          29.0,
+          -8.0,
+          -8.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "04-01-upper_leg_left",
+      "name": "左上腿",
+      "sourceName": "upper_leg_left",
+      "assembly": "左大腿",
+      "assemblyId": "04",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 12250,
+      "bounds": [
+        [
+          -44.799,
+          -51.692,
+          -70.5
+        ],
+        [
+          16.197,
+          -4.033,
+          -42.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "04-02-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "左大腿",
+      "assemblyId": "04",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -41.777,
+          -49.0,
+          -69.5
+        ],
+        [
+          -21.777,
+          -15.0,
+          -40.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "04-03-upper_leg_rigidity_plate",
+      "name": "上腿加固板",
+      "sourceName": "upper_leg_rigidity_plate",
+      "assembly": "左大腿",
+      "assemblyId": "04",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 3600,
+      "bounds": [
+        [
+          -43.059,
+          -50.496,
+          -43.5
+        ],
+        [
+          14.999,
+          -5.5,
+          -42.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "04-04-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "左大腿",
+      "assemblyId": "04",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -42.777,
+          -50.5,
+          -42.5
+        ],
+        [
+          -20.777,
+          -28.5,
+          -38.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "04-05-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "左大腿",
+      "assemblyId": "04",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -20.5,
+          -27.5,
+          -69.5
+        ],
+        [
+          13.5,
+          -7.5,
+          -40.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "05-01-leg",
+      "name": "腿部",
+      "sourceName": "leg",
+      "assembly": "左小腿",
+      "assemblyId": "05",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 14776,
+      "bounds": [
+        [
+          -41.777,
+          -87.5,
+          -40.45
+        ],
+        [
+          -21.777,
+          -29.5,
+          -32.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "05-02-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "左小腿",
+      "assemblyId": "05",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -41.777,
+          -91.0,
+          -64.5
+        ],
+        [
+          -21.777,
+          -57.0,
+          -35.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "06-01-sole_left",
+      "name": "左脚底",
+      "sourceName": "sole_left",
+      "assembly": "左踝脚",
+      "assemblyId": "06",
+      "defaultMaterial": "tpu",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 5,
+      "defaultColor": "#30343B",
+      "triangles": 15788,
+      "bounds": [
+        [
+          -51.777,
+          -106.526,
+          -70.354
+        ],
+        [
+          2.223,
+          -93.619,
+          -29.255
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "06-02-foot_left",
+      "name": "左脚",
+      "sourceName": "foot_left",
+      "assembly": "左踝脚",
+      "assemblyId": "06",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "primary",
+      "printable": true,
+      "plate": 1,
+      "defaultColor": "#F1EFE7",
+      "triangles": 19922,
+      "bounds": [
+        [
+          -51.777,
+          -104.528,
+          -69.966
+        ],
+        [
+          2.223,
+          -87.619,
+          -29.881
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "06-03-seeed_bearing__configuration_default",
+      "name": "Seeed轴承默认",
+      "sourceName": "seeed_bearing__configuration_default",
+      "assembly": "左踝脚",
+      "assemblyId": "06",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -39.277,
+          -89.0,
+          -35.3
+        ],
+        [
+          -24.277,
+          -74.0,
+          -32.3
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "06-04-ankle_left",
+      "name": "脚踝左",
+      "sourceName": "ankle_left",
+      "assembly": "左踝脚",
+      "assemblyId": "06",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 4978,
+      "bounds": [
+        [
+          -46.44,
+          -97.8,
+          -69.654
+        ],
+        [
+          -9.94,
+          -72.3,
+          -30.164
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "07-01-neck",
+      "name": "颈部",
+      "sourceName": "neck",
+      "assembly": "颈根",
+      "assemblyId": "07",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 1468,
+      "bounds": [
+        [
+          16.0,
+          51.922,
+          11.5
+        ],
+        [
+          36.0,
+          62.922,
+          13.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "07-02-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "颈根",
+      "assemblyId": "07",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          16.0,
+          22.921,
+          -14.5
+        ],
+        [
+          36.0,
+          56.922,
+          14.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "07-03-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "颈根",
+      "assemblyId": "07",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          16.0,
+          57.922,
+          -14.5
+        ],
+        [
+          36.0,
+          91.922,
+          14.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "07-04-neck",
+      "name": "颈部",
+      "sourceName": "neck",
+      "assembly": "颈根",
+      "assemblyId": "07",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 1468,
+      "bounds": [
+        [
+          16.0,
+          51.922,
+          -13.5
+        ],
+        [
+          36.0,
+          62.922,
+          -11.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "08-01-neck_pitch",
+      "name": "颈部俯仰",
+      "sourceName": "neck_pitch",
+      "assembly": "颈俯仰",
+      "assemblyId": "08",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 7120,
+      "bounds": [
+        [
+          17.0,
+          73.421,
+          -17.5
+        ],
+        [
+          35.0,
+          101.115,
+          17.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "08-02-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "颈俯仰",
+      "assemblyId": "08",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          15.0,
+          99.215,
+          -11.0
+        ],
+        [
+          37.0,
+          103.215,
+          11.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "09-01-yaw_roll_motion",
+      "name": "偏航横滚运动",
+      "sourceName": "yaw_roll_motion",
+      "assembly": "头yaw-roll",
+      "assemblyId": "09",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 5814,
+      "bounds": [
+        [
+          8.1,
+          106.615,
+          -9.5
+        ],
+        [
+          44.0,
+          129.115,
+          24.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "09-02-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "头yaw-roll",
+      "assemblyId": "09",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          16.0,
+          101.115,
+          -9.5
+        ],
+        [
+          36.0,
+          130.115,
+          24.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "09-03-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "头yaw-roll",
+      "assemblyId": "09",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          6.0,
+          104.615,
+          -11.0
+        ],
+        [
+          10.0,
+          126.615,
+          11.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "09-04-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "头yaw-roll",
+      "assemblyId": "09",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          40.0,
+          104.615,
+          -11.0
+        ],
+        [
+          44.0,
+          126.615,
+          11.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-01-lens",
+      "name": "镜头",
+      "sourceName": "lens",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#162329",
+      "triangles": 1872,
+      "bounds": [
+        [
+          70.98,
+          122.645,
+          -8.379
+        ],
+        [
+          89.9,
+          139.585,
+          8.561
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-02-face_part",
+      "name": "面部零件",
+      "sourceName": "face_part",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 11412,
+      "bounds": [
+        [
+          68.9,
+          110.315,
+          -43.734
+        ],
+        [
+          81.4,
+          154.941,
+          43.917
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-03-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          16.6,
+          108.615,
+          -40.0
+        ],
+        [
+          50.6,
+          128.615,
+          -11.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-04-jaw_soft",
+      "name": "软下巴",
+      "sourceName": "jaw_soft",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "tpu",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 4,
+      "defaultColor": "#F28C28",
+      "triangles": 6726,
+      "bounds": [
+        [
+          51.601,
+          99.867,
+          -43.837
+        ],
+        [
+          83.835,
+          108.304,
+          43.837
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-05-motor_support",
+      "name": "电机支架",
+      "sourceName": "motor_support",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 3616,
+      "bounds": [
+        [
+          -1.9,
+          111.515,
+          -34.0
+        ],
+        [
+          52.3,
+          130.315,
+          39.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-06-top_head_shell",
+      "name": "头部上壳",
+      "sourceName": "top_head_shell",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "primary",
+      "printable": true,
+      "plate": 1,
+      "defaultColor": "#F1EFE7",
+      "triangles": 16120,
+      "bounds": [
+        [
+          -30.4,
+          111.113,
+          -45.88
+        ],
+        [
+          92.29,
+          157.449,
+          45.88
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-07-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -20.9,
+          105.615,
+          -9.5
+        ],
+        [
+          8.1,
+          125.615,
+          24.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-08-seeed_bearing__configuration_default",
+      "name": "Seeed轴承默认",
+      "sourceName": "seeed_bearing__configuration_default",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          18.6,
+          111.315,
+          37.0
+        ],
+        [
+          33.6,
+          126.315,
+          40.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-09-elec_rpi_robot_hat_pcb",
+      "name": "树莓派机器人HAT电路板",
+      "sourceName": "elec_rpi_robot_hat_pcb",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#266B57",
+      "triangles": 18856,
+      "bounds": [
+        [
+          59.16,
+          116.045,
+          -32.514
+        ],
+        [
+          60.0,
+          146.07,
+          32.511
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-10-soft_mouth_top",
+      "name": "软嘴顶部",
+      "sourceName": "soft_mouth_top",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "tpu",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 4,
+      "defaultColor": "#F28C28",
+      "triangles": 7870,
+      "bounds": [
+        [
+          51.683,
+          106.443,
+          -43.911
+        ],
+        [
+          84.248,
+          109.719,
+          43.911
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-11-noenoeil",
+      "name": "眼睛",
+      "sourceName": "noenoeil",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 984,
+      "bounds": [
+        [
+          79.9,
+          116.115,
+          -14.909
+        ],
+        [
+          89.4,
+          146.115,
+          15.091
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-12-jaw",
+      "name": "下巴",
+      "sourceName": "jaw",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 3,
+      "defaultColor": "#F28C28",
+      "triangles": 9918,
+      "bounds": [
+        [
+          17.1,
+          98.167,
+          -45.708
+        ],
+        [
+          85.81,
+          127.615,
+          45.708
+        ]
+      ],
+      "paintable": true
+    },
+    {
+      "id": "10-13-bottom_head_shell",
+      "name": "头部下壳",
+      "sourceName": "bottom_head_shell",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "primary",
+      "printable": true,
+      "plate": 1,
+      "defaultColor": "#F1EFE7",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -30.4,
+          98.678,
+          -45.882
+        ],
+        [
+          86.348,
+          118.815,
+          45.881
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-14-m12_lens_holder",
+      "name": "M12镜头座",
+      "sourceName": "m12_lens_holder",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 10992,
+      "bounds": [
+        [
+          63.68,
+          123.115,
+          -11.909
+        ],
+        [
+          78.48,
+          139.115,
+          12.091
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-15-pcb__raspberry_pi_zero_2_w",
+      "name": "树莓派Zero2W电路板",
+      "sourceName": "pcb__raspberry_pi_zero_2_w",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#266B57",
+      "triangles": 20970,
+      "bounds": [
+        [
+          67.31,
+          116.05,
+          -32.489
+        ],
+        [
+          68.91,
+          146.05,
+          32.511
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "10-16-speaker",
+      "name": "扬声器",
+      "sourceName": "speaker",
+      "assembly": "头部总成",
+      "assemblyId": "10",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#535960",
+      "triangles": 12,
+      "bounds": [
+        [
+          -17.923,
+          125.615,
+          -18.214
+        ],
+        [
+          7.077,
+          132.615,
+          16.786
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "11-01-yaw2roll",
+      "name": "偏航转横滚",
+      "sourceName": "yaw2roll",
+      "assembly": "右髋yaw-roll",
+      "assemblyId": "11",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 12404,
+      "bounds": [
+        [
+          -8.5,
+          -22.5,
+          6.0
+        ],
+        [
+          17.3,
+          -2.0,
+          29.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "11-02-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "右髋yaw-roll",
+      "assemblyId": "11",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -8.5,
+          -42.0,
+          7.5
+        ],
+        [
+          20.5,
+          -8.0,
+          27.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "11-03-bearing_roll",
+      "name": "横滚轴承压盖",
+      "sourceName": "bearing_roll",
+      "assembly": "右髋yaw-roll",
+      "assemblyId": "11",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 2420,
+      "bounds": [
+        [
+          15.5,
+          -42.0,
+          6.0
+        ],
+        [
+          18.5,
+          -2.0,
+          29.0
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "11-04-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "右髋yaw-roll",
+      "assemblyId": "11",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          18.5,
+          -28.5,
+          6.5
+        ],
+        [
+          22.5,
+          -6.5,
+          28.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "12-01-hip_l",
+      "name": "髋部左",
+      "sourceName": "hip_l",
+      "assembly": "右髋roll",
+      "assemblyId": "12",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -5.5,
+          -27.0,
+          8.0
+        ],
+        [
+          29.0,
+          -8.0,
+          40.45
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "12-02-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "右髋roll",
+      "assemblyId": "12",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -7.0,
+          -28.5,
+          38.5
+        ],
+        [
+          15.0,
+          -6.5,
+          42.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "13-01-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "右大腿",
+      "assemblyId": "13",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -41.777,
+          -49.0,
+          40.5
+        ],
+        [
+          -21.777,
+          -15.0,
+          69.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "13-02-seeed_bearing__configuration__22x16x4",
+      "name": "Seeed轴承22x16x4",
+      "sourceName": "seeed_bearing__configuration__22x16x4",
+      "assembly": "右大腿",
+      "assemblyId": "13",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -42.777,
+          -50.5,
+          38.5
+        ],
+        [
+          -20.777,
+          -28.5,
+          42.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "13-03-upper_leg_rigidity_plate",
+      "name": "上腿加固板",
+      "sourceName": "upper_leg_rigidity_plate",
+      "assembly": "右大腿",
+      "assemblyId": "13",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 3600,
+      "bounds": [
+        [
+          -43.059,
+          -50.496,
+          42.5
+        ],
+        [
+          14.999,
+          -5.5,
+          43.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "13-04-upper_leg_right",
+      "name": "右上腿",
+      "sourceName": "upper_leg_right",
+      "assembly": "右大腿",
+      "assemblyId": "13",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 12250,
+      "bounds": [
+        [
+          -44.799,
+          -51.692,
+          42.5
+        ],
+        [
+          16.197,
+          -4.033,
+          70.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "13-05-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "右大腿",
+      "assemblyId": "13",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -20.5,
+          -27.5,
+          40.5
+        ],
+        [
+          13.5,
+          -7.5,
+          69.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "14-01-xl330",
+      "name": "XL330舵机",
+      "sourceName": "xl330",
+      "assembly": "右小腿",
+      "assemblyId": "14",
+      "defaultMaterial": "pla",
+      "metalness": 0.05,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#000000",
+      "triangles": 4126,
+      "bounds": [
+        [
+          -41.777,
+          -91.0,
+          35.5
+        ],
+        [
+          -21.777,
+          -57.0,
+          64.5
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "14-02-leg",
+      "name": "腿部",
+      "sourceName": "leg",
+      "assembly": "右小腿",
+      "assemblyId": "14",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 14776,
+      "bounds": [
+        [
+          -41.777,
+          -87.5,
+          32.5
+        ],
+        [
+          -21.777,
+          -29.5,
+          40.45
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "15-01-ankle_right",
+      "name": "脚踝右",
+      "sourceName": "ankle_right",
+      "assembly": "右踝脚",
+      "assemblyId": "15",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 2,
+      "defaultColor": "#30343B",
+      "triangles": 4976,
+      "bounds": [
+        [
+          -46.44,
+          -97.8,
+          30.164
+        ],
+        [
+          -9.94,
+          -72.3,
+          69.654
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "15-02-sole_right",
+      "name": "右脚底",
+      "sourceName": "sole_right",
+      "assembly": "右踝脚",
+      "assemblyId": "15",
+      "defaultMaterial": "tpu",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 5,
+      "defaultColor": "#30343B",
+      "triangles": 15888,
+      "bounds": [
+        [
+          -51.777,
+          -106.527,
+          29.255
+        ],
+        [
+          2.223,
+          -93.619,
+          70.354
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "15-03-seeed_bearing__configuration_default",
+      "name": "Seeed轴承默认",
+      "sourceName": "seeed_bearing__configuration_default",
+      "assembly": "右踝脚",
+      "assemblyId": "15",
+      "defaultMaterial": "pla",
+      "metalness": 0.65,
+      "role": "hardware",
+      "printable": false,
+      "plate": null,
+      "defaultColor": "#9CA5AA",
+      "triangles": 20970,
+      "bounds": [
+        [
+          -39.277,
+          -89.0,
+          32.3
+        ],
+        [
+          -24.277,
+          -74.0,
+          35.3
+        ]
+      ],
+      "paintable": false
+    },
+    {
+      "id": "15-04-foot_right",
+      "name": "右脚",
+      "sourceName": "foot_right",
+      "assembly": "右踝脚",
+      "assemblyId": "15",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "primary",
+      "printable": true,
+      "plate": 1,
+      "defaultColor": "#F1EFE7",
+      "triangles": 19914,
+      "bounds": [
+        [
+          -51.777,
+          -104.528,
+          29.881
+        ],
+        [
+          2.223,
+          -87.619,
+          69.966
+        ]
+      ],
+      "paintable": false
+    }
+  ],
+  "sourceTriangles": 796792,
+  "displayTriangles": 796792
+}

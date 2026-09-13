@@ -1,0 +1,159 @@
+{
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "modelId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "units": {
+      "const": "mm"
+    },
+    "bounds": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "geometryUrl": {
+      "type": "string"
+    },
+    "uiNote": {
+      "type": "string"
+    },
+    "colorGroups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      }
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sourceName": {
+            "type": "string"
+          },
+          "assembly": {
+            "type": "string"
+          },
+          "assemblyId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "printable": {
+            "type": "boolean"
+          },
+          "plate": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "defaultColor": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "defaultMaterial": {
+            "enum": [
+              "pla",
+              "matte-pla",
+              "petg",
+              "tpu"
+            ]
+          },
+          "metalness": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "bounds": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "triangles": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "paintable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sourceName",
+          "assembly",
+          "assemblyId",
+          "role",
+          "printable",
+          "plate",
+          "defaultColor",
+          "defaultMaterial",
+          "metalness",
+          "bounds",
+          "triangles"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "modelId",
+    "name",
+    "units",
+    "bounds",
+    "geometryUrl",
+    "uiNote",
+    "colorGroups",
+    "parts"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Color Studio Model Pack v1"
+}
