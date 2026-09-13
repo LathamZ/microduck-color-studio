@@ -96,6 +96,9 @@
               "pla",
               "matte-pla",
               "petg",
+              "matte-petg",
+              "metallic-petg",
+              "pla-cf",
               "tpu"
             ]
           },
@@ -140,6 +143,52 @@
           "bounds",
           "triangles"
         ]
+      }
+    },
+    "viewDirections": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "front": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        },
+        "back": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        },
+        "left": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        },
+        "right": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        },
+        "three-quarter": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        }
       }
     }
   },
