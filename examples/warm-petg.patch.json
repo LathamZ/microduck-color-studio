@@ -1,0 +1,17 @@
+{
+  "name": "Warm PETG study",
+  "parts": {
+    "10-06-top_head_shell": {
+      "color": "#729D83",
+      "material": "petg"
+    }
+  },
+  "lighting": {
+    "preset": "warm",
+    "intensity": 1.1,
+    "azimuth": -45
+  },
+  "surface": {
+    "layers": true
+  }
+}

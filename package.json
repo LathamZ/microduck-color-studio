@@ -1,0 +1,29 @@
+{
+  "name": "microduck-color-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A human- and agent-friendly Microduck 3D color configurator",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
+    "palette": "tsx scripts/palette.ts",
+    "format": "prettier --write src scripts/*.ts tests *.json *.ts *.md docs/*.md .github/*.yml",
+    "format:check": "prettier --check src scripts/*.ts tests *.json *.ts *.md docs/*.md .github/*.yml"
+  },
+  "dependencies": {
+    "lucide": "0.468.0",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.180.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "vite": "^6.4.1",
+    "vitest": "^3.2.4"
+  }
+}

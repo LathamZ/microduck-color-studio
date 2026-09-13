@@ -1,0 +1,110 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "modelId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "parts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "material": {
+            "enum": [
+              "pla",
+              "matte-pla",
+              "petg",
+              "tpu"
+            ]
+          },
+          "coating": {
+            "type": "object",
+            "required": [
+              "kind",
+              "color"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "acrylic"
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              }
+            }
+          }
+        },
+        "required": [
+          "color",
+          "material"
+        ]
+      }
+    },
+    "lighting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preset": {
+          "enum": [
+            "studio",
+            "daylight",
+            "warm"
+          ]
+        },
+        "intensity": {
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 1.8
+        },
+        "azimuth": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "required": [
+        "preset",
+        "intensity",
+        "azimuth"
+      ]
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "layers": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "layers"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "modelId",
+    "name",
+    "parts",
+    "lighting",
+    "surface"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Color Studio Palette v1"
+}

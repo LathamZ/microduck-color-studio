@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "id": "example-white",
+      "name": "示例白色 PLA（请替换为真实库存）",
+      "color": "#F1EFE7",
+      "material": "pla"
+    },
+    {
+      "id": "example-black",
+      "name": "示例黑色 PETG",
+      "color": "#30343B",
+      "material": "petg"
+    },
+    {
+      "id": "example-soft",
+      "name": "示例黑色 TPU",
+      "color": "#30343B",
+      "material": "tpu"
+    }
+  ]
+}
