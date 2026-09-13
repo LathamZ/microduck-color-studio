@@ -93,3 +93,39 @@ npm run -s palette -- recommend --inventory examples/inventory.json --mode stock
 ```
 
 CLI validation errors use stable `code: "VALIDATION_ERROR"` plus a human-readable English message by default. Use `--lang zh-CN` for Chinese error messages. Machine IDs, schema keys and saved user-entered names do not change with display language.
+
+## Print model import and export
+
+The print workflow is independent of the display mesh. No geometry is obtained from the GLB, and source files are never uploaded to a server. The lazy-loaded browser API uses a worker for XML/mesh processing and ZIP creation.
+
+```ts
+const setup = await api.importPrintModel(bytes, 'my-HD1910.3mf'); // Uint8Array
+// Inspect source.objects: stable item IDs, original names, dimensions,
+// suggestedPartIds, originalColor and originalMaterial. No guessing for duplicates.
+const assignments = setup.assignments;
+assignments[0] = {
+  objectId: assignments[0].objectId,
+  enabled: true,
+  partId: '10-06-top_head_shell',
+}; // Resolve the actual matching part ID first.
+const plan = await api.configurePrint(assignments, {
+  printerId: 'p1s',
+  width: 256,
+  depth: 256,
+  height: 250,
+  margin: 10,
+  gap: 8,
+  grouping: 'color',
+});
+const zipBytes = await api.exportPrint(); // Uint8Array; no automatic download
+```
+
+`getPrintSetup()` returns a deep copy of the current source summary, assignments and options. `configurePrint()` validates the complete proposal and produces a plan before committing it. Every source object must have an explicit `enabled` decision. Each included object needs either `partId` (reads the current palette at planning/export time) or an independent `finish`. `grouping:'part'` additionally separates part IDs or independent source names. Materials and base colors are always separated; acrylic remains in `finish.coating` for post-processing.
+
+`planPrint()` returns a deterministic plan without downloading. `exportPrint()` recalculates from current palette state and returns a ZIP containing one color-preserving multi-plate 3MF project, per-instance binary STL files and `print-plan.json`. No supports, source support painting, process profiles or G-code are carried forward. The source's orientation/scale is retained, with bed placement by translation. Oversize objects are rejected, never scaled. Dimensions and spacing are in millimeters; fit checks use axis-aligned footprints and do not predict supports/brims.
+
+Supported inputs and resource limits are described in the README. Source meshes and assignments are session-only. Re-upload after a page reload. Agent browser tools may restrict mutations: respect their policy and use the human upload flow where required. No printer connection or print-start operation exists.
+
+The `{assignments, options}` configuration is described by [`print-settings.schema.json`](https://lathamz.github.io/microduck-color-studio/print-settings.schema.json). Runtime checks additionally enforce source coverage, unique object IDs, exclusive part/finish assignment and build-area fit.
+
+Printer presets are available as machine-readable [`printers.json`](https://lathamz.github.io/microduck-color-studio/printers.json). Set `printerId` to `p1s`, `h2d`, `a1-mini`, `x2d` or `custom`. Preset dimensions must match the catalog. Dimensions follow Bambu Studio machine profiles; usable heights can differ from advertised build volumes. Insets conservatively avoid excluded areas and use shared nozzle reach. The full bed dimensions determine plate origins, independently of packing insets. These presets do not configure slicing processes.

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Print configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "assignments",
+    "options"
+  ],
+  "properties": {
+    "assignments": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "objectId",
+          "enabled"
+        ],
+        "properties": {
+          "objectId": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "partId": {
+            "type": "string"
+          },
+          "finish": {
+            "type": "object",
+            "required": [
+              "color",
+              "material"
+            ],
+            "properties": {
+              "color": {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              },
+              "material": {
+                "enum": [
+                  "pla",
+                  "matte-pla",
+                  "petg",
+                  "matte-petg",
+                  "metallic-petg",
+                  "pla-cf",
+                  "tpu"
+                ]
+              },
+              "coating": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "color"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "acrylic"
+                  },
+                  "color": {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "depth",
+        "height",
+        "margin",
+        "gap",
+        "grouping"
+      ],
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 2000
+        },
+        "depth": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 2000
+        },
+        "height": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2000
+        },
+        "margin": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 0
+        },
+        "grouping": {
+          "enum": [
+            "color",
+            "part"
+          ]
+        },
+        "printerId": {
+          "enum": [
+            "p1s",
+            "h2d",
+            "a1-mini",
+            "x2d",
+            "custom"
+          ]
+        }
+      }
+    }
+  }
+}
