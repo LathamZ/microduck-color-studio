@@ -1,72 +1,93 @@
 # Microduck Color Studio
 
-A 3D color and material studio for humans **and** agents. Built with TypeScript, Three.js and Vite. 中文界面，开放的数据接口。
+为人和 Agent 共同设计的 3D 配色工作室。基于真实的 Microduck 装配模型，逐件调整颜色、材质与灯光，把脑海中的配色变成可以旋转查看的效果。
 
-Rotate the real Microduck assembly, select individual parts, compare PLA / matte PLA / PETG / TPU finishes, and adjust lighting. Export a reproducible JSON look or a PNG image.
+**[在线体验](https://lathamz.github.io/microduck-color-studio/)**
 
-![Microduck Color Studio — 15-second feature preview](docs/media/studio-demo.gif)
+![Microduck 配色工作室：15 秒功能演示](docs/media/studio-demo.gif)
 
-The preview uses example inventory and records only the webpage viewport.
+演示包含旋转模型、整体换色、单件材质、灯光和库存配色推荐。只录制网页内容，演示库存为示例数据。
 
-## Run
+## 能做什么
+
+- **逐件配色**：70 个独立装配实例，支持点击模型选择、按名称或 ID 搜索、同名零件批量调整。
+- **立体查看**：旋转、缩放、标准视角、单件隔离、展开装配和隐藏标准硬件。
+- **材质与灯光**：PLA、哑光 PLA、PETG、TPU 外观预设，摄影棚、日光、暖光，以及可调强度、方向和近似层纹。
+- **保存方案**：颜色、材质、涂色与灯光统一保存，支持撤销、重做、JSON 导入导出、浏览器本地保存和 PNG 效果图。
+- **库存推荐**：记录已有耗材，比较“只用已有”“补充一色”和“丙烯点缀”方案，明确区分现有料、建议补料与后期涂色。
+- **Agent 接口**：稳定零件 ID、版本化 JSON Schema、命令行工具和显式浏览器 API，支持调色、改材质、打光和库存推荐。
+- **可替换模型**：通用渲染、编辑状态与模型数据包分离，后续可以接入其他模型。
+
+## 本地运行
+
+需要 Node.js 22 和 npm。
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open the local URL Vite prints. Production: `npm run build`, then serve `dist/` with any static server. No backend, account, API key, analytics or print service is required. Palettes are saved in your browser's local storage. Export JSON for portable backups.
+打开终端中显示的本地地址。生产构建使用 `npm run build`，将 `dist/` 部署到任意静态网站服务即可。
 
-## Features
+项目无需后端、登录、API Key 或打印机连接，也不包含统计追踪。配色与库存保存在当前浏览器；导出 JSON 可以跨设备备份。
 
-- 70 individually addressable assembly instances, including 36 visual printable instances and 34 hardware instances.
-- Click-to-select, named part browser, orbit / zoom / standard views, isolate and exploded view.
-- Independent part colors, same-source batch editing, color groups and six starting palettes.
-- PBR presets for PLA, matte PLA, PETG and TPU; directional key light and environment reflections.
-- Approximate 0.2 mm layer shading, adjustable light intensity / direction, three lighting presets.
-- Shared color + finish + lighting state, undo/redo, validated import/export and local persistence.
-- Stable IDs, versioned JSON Schema, CLI and explicit browser API for agents.
+## 使用自己的耗材
 
-## Agents: start here
+打开右上角 **我的耗材**，填写实际拥有的耗材名称、颜色与材质。
 
-Read [AGENTS.md](AGENTS.md), [Agent API](docs/agent-api.md) and [architecture](docs/architecture.md).
+| 推荐方式 | 处理逻辑 |
+|---|---|
+| 只用已有 | 优先使用库存内的颜色和合适材质，缺少必要材质时明确提示 |
+| 补充一色 | 最多建议额外购买一卷配色料，缺少的必要材质另列 |
+| 丙烯点缀 | 使用现有料打印，再为允许涂色的硬质外观件建议丙烯笔补色 |
+
+推荐使用确定性的颜色距离匹配与配色模板，不把主观审美包装成精确评分。柔性件保留 TPU 要求，不能为了颜色而换成硬质料。涂层颜色单独记录，不会覆盖实际打印本色。
+
+## 给 Agent
+
+从 [AGENTS.md](AGENTS.md)、[接口文档](docs/agent-api.md) 和 [架构设计](docs/architecture.md) 开始。
 
 ```sh
 npm run -s palette -- parts --role primary
 npm run -s palette -- new --out my-look.json
 npm run -s palette -- edit --in my-look.json --patch examples/warm-petg.patch.json --out warm-look.json
 npm run -s palette -- validate --in warm-look.json
+npm run -s palette -- recommend --inventory examples/inventory.json --mode paint --out suggestions.json
 ```
 
-The CLI and browser share the **same validator and state contract**. CLI output is JSON; errors go to stderr with exit code 1. `--out` never overwrites existing files. Import the resulting JSON through the editor.
+命令行和网页共用同一套校验与状态格式。结果输出为 JSON；错误写入标准错误并返回退出码 1。`--out` 不覆盖已有文件。浏览器在准备完成后提供 `window.colorStudio`。
 
-## Model scope and licenses
+## 架构与开发
 
-This is a **visual configurator**, not a slicer or a fit-check tool. The included GLB is derived from Pollen Robotics' original XL330 simulation assembly, via `microduck-replica`'s assembled STLs. It is not an exact HD1910 assembly, does not include the optional roller-skate configuration, and its visual instance count is **not a printing BOM**. Color changes do not modify any `.3mf`, STL, CAD repository or printer.
+- `src/domain.ts`：独立于模型和界面的状态、校验与历史记录。
+- `src/viewer.ts`：通用 Three.js 渲染、拾取、材质、灯光与相机。
+- `src/recommend.ts`：库存校验和配色推荐。
+- `src/models/`：当前模型的接入配置与配色模板。
+- `public/models/`：GLB 几何与具名零件清单。
+- `src/api.ts`、`scripts/palette.ts`：人机共用的公开接口。
 
-Material presets are visual approximations, not measurements of a filament brand. TPU does not deform; opaque PETG is shown without transmission. Layer shading uses assembly Y, not per-part print orientation. RGB screenshots cannot predict exact physical filament color.
-
-- Original application code: **Apache-2.0**.
-- Included model geometry and derived metadata: **CC BY-NC-SA 4.0**, non-commercial, with attribution and ShareAlike. These restrictions remain attached to the model when reused with the open-source application.
-- See [NOTICE.md](NOTICE.md) for sources and geometry provenance.
-
-## Develop
+接入其他模型请阅读 [模型数据包规范](docs/model-pack.md)。常规运行无需 Python，也不依赖开发者的其他仓库。
 
 ```sh
 npm test
 npm run build
+npm run format:check
 ```
 
-See [model-pack.md](docs/model-pack.md) for adding a different model without changing the renderer or editor state. Model regeneration is optional; the ready-to-use GLB is included.
+CI 模板位于 `.github/ci.example.yml`。使用具备工作流写入权限的 GitHub 凭证，将其移至 `.github/workflows/ci.yml` 即可启用。
 
-## Your filaments, your palette
+## 模型范围与效果边界
 
-Open **我的耗材** to record actual stock colors and material types. Compare:
+这是外观配置工具，不是切片软件或装配尺寸校验工具。当前模型来自原版 **XL330 仿真装配**，保留约 79.7 万个原始三角面；它不是精确的 HD1910 装配模型，也不包含轮滑变体。
 
-- **只用已有** — feasible colors from your stock, with missing required material types called out.
-- **补充一色** — at most one optional extra color spool, plus any missing essential material types.
-- **丙烯点缀** — owned filament as the base, with a separate acrylic coating suggestion on eligible exterior parts.
+70 个可视实例中，36 个标记为打印件、34 个为标准硬件；这一数量**不是打印 BOM**。网页不会修改 `.3mf`、STL、CAD 仓库或打印机。
 
-Recommendations use color-distance matching to curated palettes; they are deterministic and available to agents through both CLI and browser API. Flexible parts retain TPU requirements. Inventory is independently importable/exportable as JSON; no sample stock is silently treated as yours.
+材质效果为近似模拟，未按具体耗材品牌实测。PETG 以不透明材质展示，TPU 不模拟形变；0.2 mm 层纹按装配竖直方向生成，不代表各零件真实打印朝向。丙烯涂色需先用试片检查附着效果。屏幕颜色也不等同于实物色。
 
-CI template: `.github/ci.example.yml`. To enable it, move it into `.github/workflows/ci.yml` with a GitHub credential that has workflow-write permission. Local checks are available immediately with `npm test` and `npm run build`.
+## 许可证与来源
+
+- 本项目原创代码与文档：**Apache-2.0**。
+- 模型、衍生元数据及渲染图：**CC BY-NC-SA 4.0**，保留署名、非商业性使用和相同方式共享要求。
+- 原始模型：**Pollen Robotics**；装配导出与整理来源：[fanhao375/microduck-replica](https://github.com/fanhao375/microduck-replica)。
+
+应用代码的开源许可证不会改变模型本身的授权条件。完整来源与声明见 [NOTICE.md](NOTICE.md)。
