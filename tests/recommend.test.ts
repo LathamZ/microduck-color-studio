@@ -16,6 +16,29 @@ const inventory: Inventory = {
   ],
 };
 describe('inventory-aware recommendations', () => {
+  it.each(['matte-petg', 'metallic-petg', 'pla-cf'] as const)(
+    'round-trips and recommends %s without replacing flexible parts',
+    (material) => {
+      const stock = validateInventory({
+        schemaVersion: 1,
+        items: [
+          { id: 'rigid', name: material, color: '#556677', material },
+          { id: 'soft', name: 'TPU', color: '#111111', material: 'tpu' },
+        ],
+      });
+      const plans = recommend(model, defaults(model), stock, presets, 'stock');
+      expect(plans.length).toBeGreaterThan(0);
+      for (const plan of plans) {
+        const roundTrip = validatePalette(JSON.parse(JSON.stringify(plan.palette)), model);
+        for (const part of model.parts.filter((p) => p.printable)) {
+          expect(roundTrip.parts[part.id].material).toBe(
+            part.defaultMaterial === 'tpu' ? 'tpu' : material,
+          );
+        }
+      }
+    },
+  );
+
   it('uses only owned compatible materials in stock mode', () => {
     for (const plan of recommend(model, defaults(model), inventory, presets, 'stock')) {
       expect(plan.missing).toHaveLength(0);

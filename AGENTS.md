@@ -6,7 +6,7 @@ This repository has two supported agent workflows: editing looks and developing 
 
 1. Read `public/models/parts.json` (stable instance IDs, source groups, defaults, printability).
 2. Read `public/palette.schema.json` and `docs/agent-api.md`.
-3. Use `npm run -s palette -- new|parts|edit|validate`. Supply colors as #RRGGBB, materials as `pla`, `matte-pla`, `petg`, `tpu`.
+3. Use `npm run -s palette -- new|parts|edit|validate`. Supply colors as #RRGGBB, materials as `pla`, `matte-pla`, `petg`, `matte-petg`, `metallic-petg`, `pla-cf`, `tpu`.
 4. Changes to colors, materials, lighting or layer shading belong in the palette JSON, not in the geometry.
 5. Validate before import. Verify the look visually when appearance matters. Export a complete palette to make your result reproducible.
 

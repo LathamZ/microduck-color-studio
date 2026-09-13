@@ -54,8 +54,13 @@ export function setLocale(value: Locale) {
   localize();
   const button = document.getElementById('language-toggle');
   if (button) {
-    button.textContent = locale === 'en' ? '中文' : 'EN';
-    button.setAttribute('aria-label', locale === 'en' ? 'Switch to Chinese' : 'Switch to English');
+    document.getElementById('language-label')!.textContent = locale === 'en' ? 'English' : '中文';
+    button.setAttribute(
+      'aria-label',
+      locale === 'en'
+        ? 'Current language: English. Switch to Chinese'
+        : '当前语言：中文。切换到英文',
+    );
   }
   window.dispatchEvent(new CustomEvent('colorstudio:locale', { detail: locale }));
 }

@@ -3,7 +3,7 @@
   "modelId": "microduck-walk-v1",
   "name": "Microduck · 步行装配",
   "units": "mm",
-  "coordinateSystem": "Y-up, front +Z",
+  "coordinateSystem": "Y-up, front +X",
   "license": "CC-BY-NC-SA-4.0",
   "source": "https://github.com/pollen-robotics/microduck_rl",
   "upstreamRevision": "2fa62b8",
@@ -1929,5 +1929,32 @@
     }
   ],
   "sourceTriangles": 796792,
-  "displayTriangles": 796792
+  "displayTriangles": 796792,
+  "viewDirections": {
+    "front": [
+      1,
+      0,
+      0
+    ],
+    "back": [
+      -1,
+      0,
+      0
+    ],
+    "left": [
+      0,
+      0,
+      -1
+    ],
+    "right": [
+      0,
+      0,
+      1
+    ],
+    "three-quarter": [
+      1.4,
+      0.4,
+      0.9
+    ]
+  }
 }

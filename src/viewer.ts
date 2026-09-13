@@ -11,6 +11,9 @@ export const materialPresets: Record<
   pla: { roughness: 0.36, metalness: 0, clearcoat: 0.12, clearcoatRoughness: 0.38 },
   'matte-pla': { roughness: 0.84, metalness: 0, clearcoat: 0, clearcoatRoughness: 0.8 },
   petg: { roughness: 0.18, metalness: 0, clearcoat: 0.46, clearcoatRoughness: 0.17 },
+  'matte-petg': { roughness: 0.78, metalness: 0, clearcoat: 0.04, clearcoatRoughness: 0.75 },
+  'metallic-petg': { roughness: 0.3, metalness: 0.48, clearcoat: 0.25, clearcoatRoughness: 0.25 },
+  'pla-cf': { roughness: 0.94, metalness: 0, clearcoat: 0, clearcoatRoughness: 0.95 },
   tpu: { roughness: 0.64, metalness: 0, clearcoat: 0.05, clearcoatRoughness: 0.6 },
 };
 export class Viewer {
@@ -176,6 +179,7 @@ export class Viewer {
       mat.color.set(f.coating?.color || f.color);
       Object.assign(mat, materialPresets[f.material]);
       if (f.coating) {
+        mat.metalness = 0;
         mat.roughness = 0.7;
         mat.clearcoat = 0;
       }
@@ -259,11 +263,12 @@ export class Viewer {
   view(name: string) {
     const d = (this.size * 1.75) / Math.min(1, this.camera.aspect);
     const dirs: Record<string, number[]> = {
-      front: [0, 0.12, 1],
-      back: [0, 0.12, -1],
-      left: [-1, 0.12, 0],
-      right: [1, 0.12, 0],
+      front: [0, 0, 1],
+      back: [0, 0, -1],
+      left: [1, 0, 0],
+      right: [-1, 0, 0],
       'three-quarter': [0.9, 0.4, 1.4],
+      ...this.model.viewDirections,
     };
     const v = new THREE.Vector3(...(dirs[name] || dirs['three-quarter']))
       .normalize()

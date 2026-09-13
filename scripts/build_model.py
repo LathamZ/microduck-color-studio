@@ -23,7 +23,7 @@ for group,info in assembly.items():
   file=min(candidates,key=lambda x:len(x.name))
   n=struct.unpack('<I',file.read_bytes()[80:84])[0]; t=triangles[offset:offset+n];offset+=n
   assert len(t)==n
-  # MJCF: Z up, front -Y. Viewer: Y up, front +Z.
+  # Source assembly: Z up, front +X. Viewer: Y up, front +X.
   t=t[:,:,[0,2,1]];t[:,:,2]*=-1
   mesh=trimesh.Trimesh(vertices=t.reshape(-1,3),faces=np.arange(n*3).reshape(-1,3),process=True)
   bounds=mesh.bounds.copy(); all_bounds.append(bounds); original_count+=n
@@ -44,6 +44,6 @@ for group,info in assembly.items():
  assert offset==count,(group,offset,count)
 scene.export(out/'microduck.glb')
 b=np.array(all_bounds);bounds=[b[:,0].min(0).tolist(),b[:,1].max(0).tolist()]
-manifest={'schemaVersion':1,'modelId':'microduck-walk-v1','name':'Microduck · 步行装配','units':'mm','coordinateSystem':'Y-up, front +Z','license':'CC-BY-NC-SA-4.0','source':'https://github.com/pollen-robotics/microduck_rl','upstreamRevision':'2fa62b8','geometryNote':'Display geometry derived from the original XL330 simulation assembly; not an HD1910 manufacturing or fit reference. Original face count retained for visual fidelity. Optional roller skates are not included.','bounds':bounds,'geometryUrl':'microduck.glb','uiNote':'原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。','colorGroups':[{'id':'primary','name':'主色'},{'id':'structure','name':'结构'},{'id':'accent','name':'点缀'}],'parts':parts,'sourceTriangles':original_count,'displayTriangles':sum(x['triangles'] for x in parts)}
+manifest={'schemaVersion':1,'modelId':'microduck-walk-v1','name':'Microduck · 步行装配','units':'mm','coordinateSystem':'Y-up, front +X','viewDirections':{'front': [1, 0, 0], 'back': [-1, 0, 0], 'left': [0, 0, -1], 'right': [0, 0, 1], 'three-quarter': [1.4, 0.4, 0.9]},'license':'CC-BY-NC-SA-4.0','source':'https://github.com/pollen-robotics/microduck_rl','upstreamRevision':'2fa62b8','geometryNote':'Display geometry derived from the original XL330 simulation assembly; not an HD1910 manufacturing or fit reference. Original face count retained for visual fidelity. Optional roller skates are not included.','bounds':bounds,'geometryUrl':'microduck.glb','uiNote':'原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。','colorGroups':[{'id':'primary','name':'主色'},{'id':'structure','name':'结构'},{'id':'accent','name':'点缀'}],'parts':parts,'sourceTriangles':original_count,'displayTriangles':sum(x['triangles'] for x in parts)}
 (out/'parts.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
 print(json.dumps({'parts':len(parts),'printable':sum(x['printable'] for x in parts),'faces':manifest['displayTriangles'],'bounds':bounds,'glbBytes':(out/'microduck.glb').stat().st_size},ensure_ascii=False))

@@ -12,6 +12,9 @@ const names: Record<MaterialKind, string> = {
   pla: 'PLA',
   'matte-pla': '哑光 PLA',
   petg: 'PETG',
+  'matte-petg': '哑光 PETG',
+  'metallic-petg': '金属质感 PETG',
+  'pla-cf': 'PLA-CF',
   tpu: 'TPU',
 };
 const esc = (s: string) =>

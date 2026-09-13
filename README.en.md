@@ -14,7 +14,7 @@ The preview shows orbiting, whole-model palettes, individual finishes, lighting 
 
 - **Customize each part.** Select any of 70 independent assembly instances in 3D or find it by name or stable ID. Optionally edit equivalent source parts together.
 - **Explore the assembly.** Orbit, zoom, jump between standard views, isolate a part, explode the assembly or hide standard hardware.
-- **Compare materials and lighting.** Preview PLA, matte PLA, PETG and TPU with studio, daylight or warm lighting. Adjust light intensity and direction, and toggle approximate layer lines.
+- **Compare materials and lighting.** Preview PLA, matte PLA, PETG, matte PETG, metallic PETG, PLA-CF and TPU with studio, daylight or warm lighting. Adjust light intensity and direction, and toggle approximate layer lines.
 - **Keep a reproducible look.** Colors, materials, acrylic coatings and lighting share one validated state. Undo and redo changes, import or export JSON, save locally, or download a PNG preview.
 - **Work with your actual stock.** Keep your filament inventory separate from reference colors. The part inspector shows compatible stock and whether the selected color/material combination is available.
 - **Discover another combination.** Compare inventory-only, one-extra-color and acrylic-accent recommendations. Choose **New ideas** to explore different combinations without dropping material constraints.

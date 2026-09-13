@@ -1,6 +1,23 @@
 /** View-language catalog. IDs, inventory data and palette contracts never depend on locale. */
 export type Locale = 'zh-CN' | 'en';
 export const english: Record<string, string> = {
+  '小鸭子，也有大脾气。': 'Small duck. Big attitude.',
+  '今天这只鸭，有点不一样。': 'A different kind of duck today.',
+  '出厂靠打印，出彩靠你。': 'Printed into shape. Colored by you.',
+  '给机械一点叛逆。': 'Give the machine a rebellious streak.',
+  '配色不撞款，小鸭不随大流。': 'Your duck. Its own colors.',
+  '把灵感，涂成一只鸭。': 'Turn a spark into a duck.',
+  换一句标语: 'Shuffle tagline',
+  切换语言: 'Switch language',
+
+  '哑光 PETG': 'Matte PETG',
+  '金属质感 PETG': 'Metallic PETG',
+  '低光泽、柔和漫反射的 PETG 外观。': 'A low-gloss PETG finish with soft, diffuse reflections.',
+  '金属色泽与较集中的高光；为外观模拟。':
+    'Metallic-looking luster and focused highlights; an appearance approximation.',
+  '碳纤维填充 PLA 的低光泽外观；不模拟编织碳布。':
+    'A low-gloss carbon-fiber-filled PLA finish, without a woven carbon-cloth pattern.',
+
   '在 GitHub 查看项目': 'View project on GitHub',
   '给你的小鸭子，一点个性。': 'A little character for your little duck.',
   '让每一面，都像你。': 'Make every side your own.',

@@ -51,7 +51,7 @@ Patch example (replace the ID with an ID from the manifest):
 }
 ```
 
-Materials: `pla`, `matte-pla`, `petg`, `tpu`. Colors: exactly six hexadecimal digits after `#`. Intensity: 0.3–1.8; azimuth: −180–180 degrees; light presets: `studio`, `daylight`, `warm`.
+Materials: `pla`, `matte-pla`, `petg`, `matte-petg`, `metallic-petg`, `pla-cf`, `tpu`. Colors: exactly six hexadecimal digits after `#`. Intensity: 0.3–1.8; azimuth: −180–180 degrees; light presets: `studio`, `daylight`, `warm`.
 
 The complete output is portable across browser and CLI. Camera angle/selection/isolation are inspection state and are not exported. Material keys on non-printable hardware are retained in the schema for uniformity, but hardware uses neutral hardware shading in the renderer; use material edits on printable parts.
 

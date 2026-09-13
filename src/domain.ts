@@ -1,4 +1,12 @@
-export const MATERIALS = ['pla', 'matte-pla', 'petg', 'tpu'] as const;
+export const MATERIALS = [
+  'pla',
+  'matte-pla',
+  'petg',
+  'matte-petg',
+  'metallic-petg',
+  'pla-cf',
+  'tpu',
+] as const;
 export type MaterialKind = (typeof MATERIALS)[number];
 export type Part = {
   id: string;
@@ -27,6 +35,9 @@ export type Manifest = {
   displayTriangles: number;
   geometryUrl: string;
   uiNote: string;
+  viewDirections?: Partial<
+    Record<'front' | 'back' | 'left' | 'right' | 'three-quarter', [number, number, number]>
+  >;
   colorGroups: { id: string; name: string }[];
 };
 export type Finish = {

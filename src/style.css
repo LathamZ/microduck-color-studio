@@ -1681,3 +1681,43 @@ html[lang='en'] .reference-heading {
     height: 16px;
   }
 }
+
+.language-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.language-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+.slogan-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.slogan-row .icon-button {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+.slogan-row h1 {
+  text-wrap: balance;
+}
+@media (max-width: 560px) {
+  .language-toggle {
+    font-size: 10px;
+  }
+  .language-toggle svg {
+    width: 13px;
+    height: 13px;
+  }
+  .top-actions .project-github {
+    padding: 5px 2px;
+  }
+  .slogan-row {
+    max-width: 290px;
+  }
+}

@@ -29,6 +29,9 @@
               "pla",
               "matte-pla",
               "petg",
+              "matte-petg",
+              "metallic-petg",
+              "pla-cf",
               "tpu"
             ]
           },
