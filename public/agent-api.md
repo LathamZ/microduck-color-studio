@@ -81,3 +81,15 @@ npm run -s palette -- recommend --inventory examples/inventory.json --mode add-o
 Inventory schema: `inventory.schema.json`. Recommendation uses deterministic CIE76 Lab proximity to the adapter's curated palettes, enforces TPU/rigid separation and deduplicates identical results. It is a transparent heuristic, not a learned aesthetic evaluator. “Add one” limits discretionary color spools to one; missing essential material types are listed separately.
 
 Acrylic is a separate optional `coating: {kind:'acrylic',color:'#RRGGBB'}` on a part. `color` remains the actual filament color. Only model instances with `paintable:true` accept coatings. The Microduck adapter conservatively permits the hard jaw exterior only; soft TPU and bearing/contact parts are excluded. A base-color edit clears its coating. The renderer approximates coating across the whole permitted part, not brush strokes or printed masks. Validate adhesion on a sample before painting.
+
+## Reproducible fresh combinations
+
+`api.recommend(mode, {seed: 42})` generates new inventory-aware candidate combinations. The same inventory, base look, model and seed reproduce the same result. Seed is an integer in the range 0–4294967295. Omitting it uses the curated initial palettes. Distinct output looks are deduplicated; stock with few colors may not produce three alternatives.
+
+The human **New ideas / 换一换** button chooses a fresh seed and uses this same API logic. Material compatibility, explicit missing-stock reporting and coating restrictions apply to generated combinations as well.
+
+```sh
+npm run -s palette -- recommend --inventory examples/inventory.json --mode stock --seed 42 --out ideas.json
+```
+
+CLI validation errors use stable `code: "VALIDATION_ERROR"` plus a human-readable English message by default. Use `--lang zh-CN` for Chinese error messages. Machine IDs, schema keys and saved user-entered names do not change with display language.

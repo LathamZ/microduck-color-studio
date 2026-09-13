@@ -6,6 +6,7 @@ import {
   type Recommendation,
   type RecommendationMode,
   type ColorPreset,
+  type RecommendationOptions,
 } from './recommend';
 const names: Record<MaterialKind, string> = {
   pla: 'PLA',
@@ -33,12 +34,13 @@ export function inventoryUI(
   } catch {
     notify('库存数据不可用，请重新录入或导入备份');
   }
+  let seed: number | undefined;
   let mode: RecommendationMode = 'stock',
     plans: Recommendation[] = [];
   const dialog = document.createElement('dialog');
   dialog.id = 'inventory-dialog';
   dialog.className = 'inventory-dialog';
-  dialog.innerHTML = `<div class="panel-title"><div><span class="eyebrow">WORK WITH WHAT YOU HAVE</span><h2>我的耗材与配色灵感</h2></div><button class="icon-button inventory-close" aria-label="关闭耗材窗口">×</button></div><div class="inventory-layout"><section><div class="inventory-heading"><h3>已有耗材 <span id="stock-count"></span></h3><button id="add-stock" class="button subtle">＋ 添加</button></div><div id="stock-list"></div><div class="inventory-actions"><button id="export-stock" class="text-button">导出库存 JSON</button><button id="import-stock" class="text-button">导入库存 JSON</button></div><input id="stock-file" type="file" accept="application/json,.json" hidden><p class="small-note">记录你实际拥有的耗材。名称、颜色与材质保存在此浏览器中；不会假设你拥有某卷耗材。</p></section><section><div class="inventory-heading"><h3>配色推荐</h3></div><div class="recommend-modes segmented"><button data-mode="stock" class="active">只用已有</button><button data-mode="add-one">补充一色</button><button data-mode="paint">丙烯点缀</button></div><p id="recommend-mode-note" class="small-note"></p><div id="recommend-list"></div></section></div>`;
+  dialog.innerHTML = `<div class="panel-title"><div><span class="eyebrow">WORK WITH WHAT YOU HAVE</span><h2>我的耗材与配色灵感</h2></div><button class="icon-button inventory-close" aria-label="关闭耗材窗口">×</button></div><div class="inventory-layout"><section><div class="inventory-heading"><h3>已有耗材 <span id="stock-count"></span></h3><button id="add-stock" class="button subtle">＋ 添加</button></div><div id="stock-list"></div><div class="inventory-actions"><button id="export-stock" class="text-button">导出库存 JSON</button><button id="import-stock" class="text-button">导入库存 JSON</button></div><input id="stock-file" type="file" accept="application/json,.json" hidden><p class="small-note">记录你实际拥有的耗材。名称、颜色与材质保存在此浏览器中；不会假设你拥有某卷耗材。</p></section><section><div class="inventory-heading"><h3>配色推荐</h3><button id="shuffle-recommend" class="button subtle">↻ 换一换</button></div><div class="recommend-modes segmented"><button data-mode="stock" class="active">只用已有</button><button data-mode="add-one">补充一色</button><button data-mode="paint">丙烯点缀</button></div><p id="recommend-mode-note" class="small-note"></p><div id="recommend-list"></div></section></div>`;
   document.body.append(dialog);
   const q = <T extends HTMLElement = HTMLElement>(s: string) => dialog.querySelector<T>(s)!;
   function save() {
@@ -75,7 +77,7 @@ export function inventoryUI(
       plans = [];
       return;
     }
-    plans = recommend(model, getPalette(), inventory, presets, mode);
+    plans = recommend(model, getPalette(), inventory, presets, mode, { seed });
     q('#recommend-list').innerHTML = plans
       .map((p) => {
         const colors = model.colorGroups.map((g) => {
@@ -85,7 +87,7 @@ export function inventoryUI(
           const f = part ? p.palette.parts[part.id] : null;
           return f?.coating?.color || f?.color || '#ffffff';
         });
-        return `<article class="recommend-card"><div class="recommend-head"><h4>${esc(p.name)}</h4><span>${p.complete ? '现有料可打印' : '需要补充耗材'}</span></div><div class="recommend-swatches">${colors.map((c) => `<span style="background:${c}"></span>`).join('')}</div><div class="recommend-uses">${p.used.map((x) => `<span><b style="background:${x.color}"></b>${esc(x.name)} · ${names[x.material]}</span>`).join('')}</div>${p.missing.length ? `<div class="missing-materials">${p.missing.map((x) => `<p><b style="background:${x.color}"></b>建议补 ${x.color} · ${names[x.material]}<small>${esc(x.reason)}</small></p>`).join('')}</div>` : ''}${p.paint.map((x) => `<div class="paint-advice">丙烯笔 ${x.color} · ${x.partIds.map((id) => esc(model.parts.find((y) => y.id === id)!.name)).join('、')}<small>保留已有打印本色，仅模拟表面涂色；先用试片验证附着。</small></div>`).join('')}${mode === 'paint' && !p.paint.length ? '<p class="small-note">这组配色无需额外丙烯点缀。</p>' : ''}<button class="button ${p.complete ? 'primary' : ''}" data-plan="${p.id}">${p.complete ? '预览这组配色' : '预览方案（需补料）'}</button></article>`;
+        return `<article class="recommend-card"><div class="recommend-head"><h4>${esc(p.name)}</h4><span>${p.complete ? '现有料可打印' : '需要补充耗材'}</span></div><div class="recommend-swatches">${colors.map((c) => `<span style="background:${c}"></span>`).join('')}</div><div class="recommend-uses">${p.used.map((x) => `<span><b style="background:${x.color}"></b><span data-user-content>${esc(x.name)}</span> · ${names[x.material]}</span>`).join('')}</div>${p.missing.length ? `<div class="missing-materials">${p.missing.map((x) => `<p><b style="background:${x.color}"></b>建议补 ${x.color} · ${names[x.material]}<small>${esc(x.reason)}</small></p>`).join('')}</div>` : ''}${p.paint.map((x) => `<div class="paint-advice">丙烯笔 ${x.color} · ${x.partIds.map((id) => esc(model.parts.find((y) => y.id === id)!.name)).join('、')}<small>保留已有打印本色，仅模拟表面涂色；先用试片验证附着。</small></div>`).join('')}${mode === 'paint' && !p.paint.length ? '<p class="small-note">这组配色无需额外丙烯点缀。</p>' : ''}<button class="button ${p.complete ? 'primary' : ''}" data-plan="${p.id}">${p.complete ? '预览这组配色' : '预览方案（需补料）'}</button></article>`;
       })
       .join('');
   }
@@ -97,6 +99,22 @@ export function inventoryUI(
     return structuredClone(inventory);
   }
   dialog.querySelector('.inventory-close')!.addEventListener('click', () => dialog.close());
+  q('#shuffle-recommend').onclick = () => {
+    if (!inventory.items.length) {
+      notify('请先添加已有耗材');
+      return;
+    }
+    const old = JSON.stringify(plans.map((p) => p.palette.parts));
+    for (let attempt = 0; attempt < 5; attempt++) {
+      seed = crypto.getRandomValues(new Uint32Array(1))[0];
+      drawPlans();
+      if (JSON.stringify(plans.map((p) => p.palette.parts)) !== old) {
+        notify('已换一组新的配色灵感');
+        return;
+      }
+    }
+    notify('当前库存可组成的不同外观有限，可以增加颜色或试试补充一色。');
+  };
   q('#add-stock').onclick = () => {
     const next = structuredClone(inventory);
     next.items.push({
@@ -186,7 +204,7 @@ export function inventoryUI(
     },
     getInventory: () => structuredClone(inventory),
     setInventory,
-    recommend: (m: RecommendationMode = 'stock') =>
-      recommend(model, getPalette(), inventory, presets, m),
+    recommend: (m: RecommendationMode = 'stock', options: RecommendationOptions = {}) =>
+      recommend(model, getPalette(), inventory, presets, m, options),
   };
 }

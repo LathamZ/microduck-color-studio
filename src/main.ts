@@ -1,9 +1,11 @@
+import { installI18n, locale, t } from './i18n';
 import type { ColorStudioAPI } from './api';
 import { inventoryUI } from './inventory-ui';
 import { manifestPath, presets } from './models/active';
 import './style.css';
 import {
   createIcons,
+  Github,
   Search,
   RotateCcw,
   RotateCw,
@@ -40,6 +42,7 @@ import {
 import { Viewer } from './viewer';
 const isDemo = new URLSearchParams(location.search).get('demo') === '1';
 const icons = {
+  Github,
   Search,
   RotateCcw,
   RotateCw,
@@ -76,13 +79,13 @@ const labels: Record<MaterialKind, string> = {
   tpu: 'TPU',
 };
 $('#app').innerHTML = `
-<header class="topbar"><a class="brand" href="./"><span class="brand-mark">μ</span><span>microduck<span class="brand-sub">COLOR STUDIO</span></span></a><span class="header-divider"></span><span class="project-label">给你的小鸭子，一点个性。</span><div class="top-actions"><span id="save-status" class="saved">本地自动保存</span><button id="inventory-open" class="button subtle inventory-open">我的耗材</button><button id="import" class="button subtle">${icon('upload')}<span>导入</span></button><button id="export" class="button primary">${icon('download')}<span>导出方案</span></button></div></header>
+<header class="topbar"><a class="brand" href="./"><span class="brand-mark">μ</span><span>microduck<span class="brand-sub">COLOR STUDIO</span></span></a><span class="header-divider"></span><span class="project-label">给你的小鸭子，一点个性。</span><div class="top-actions"><a class="project-github button subtle" href="https://github.com/LathamZ/microduck-color-studio" target="_blank" rel="noopener noreferrer" aria-label="在 GitHub 查看项目" title="在 GitHub 查看项目">${icon('github')}<span>GitHub</span></a><button id="language-toggle" class="language-toggle" type="button" aria-label="Switch to English">EN</button><span id="save-status" class="saved">本地自动保存</span><button id="inventory-open" class="button subtle inventory-open">我的耗材</button><button id="import" class="button subtle">${icon('upload')}<span>导入</span></button><button id="export" class="button primary">${icon('download')}<span>导出方案</span></button></div></header>
 <main class="workspace">
 <aside class="parts-panel"><div class="panel-title"><h2>零件</h2><span id="part-count" class="count">—</span></div><label class="search">${icon('search')}<input id="search" type="search" placeholder="搜索零件或 ID" aria-label="搜索零件"></label><div class="part-filters"><button data-filter="printable" class="active">打印件</button><button data-filter="all">全部</button></div><div id="part-list" class="part-list"></div><div class="parts-footer">${icon('mouse-pointer-2')} 点击模型，也能选择零件</div></aside>
 <section class="stage"><div class="stage-top"><div><div class="eyebrow">YOUR LITTLE COMPANION</div><h1>让每一面，都像你。</h1><span id="model-name" class="model-label">正在载入装配模型</span></div><span class="live-tag"><b></b> 实时 3D</span></div><div id="viewport"><div id="loading"><span class="loader"></span><span>正在组装你的小鸭子…</span></div></div><div class="stage-tools"><button class="icon-button" id="undo" aria-label="撤销" title="撤销">${icon('undo-2')}</button><button class="icon-button" id="redo" aria-label="重做" title="重做">${icon('redo-2')}</button><span></span><button class="icon-button" id="screenshot" aria-label="导出效果图" title="导出效果图">${icon('camera')}</button><button class="icon-button" id="fit" aria-label="恢复默认视角" title="恢复默认视角">${icon('maximize')}</button></div><div class="stage-bottom"><div class="view-controls"><button data-view="three-quarter" class="active">立体</button><button data-view="front">正面</button><button data-view="left">侧面</button><button data-view="back">背面</button></div><span class="gesture">拖动旋转 · 滚轮缩放</span></div><div class="stage-caption"><span>真实装配模型 · 外观预览</span><span id="selection-caption">选中零件后，可在右侧单独调色</span></div></section>
-<aside class="inspector"><div class="inspector-scroll"><div class="panel-title"><h2>外观实验室</h2>${icon('sliders-horizontal')}</div><div class="selected-heading"><span class="eyebrow">SELECTED PART</span><h3 id="selected-name">选择一个零件</h3><div id="selected-meta" class="meta">直接点击模型，或从左侧选择</div></div><div id="part-editor"><label class="field-label" for="part-color">零件颜色 <span id="color-code">#F1EFE7</span></label><div class="color-entry"><input type="color" id="part-color" value="#f1efe7" aria-label="零件颜色"><input id="hex-color" value="#F1EFE7" maxlength="7" aria-label="十六进制颜色"><button id="apply-role" class="text-button" title="应用到相同配色分组">同组应用</button></div><div id="quick-colors" class="quick-colors"></div><label class="field-label">打印材质</label><div class="material-options">${MATERIALS.map((m) => `<button data-material="${m}">${labels[m]}</button>`).join('')}</div><p id="material-description" class="small-note"></p><label class="check-row"><input type="checkbox" id="same-source"> 同名零件一起调整</label><div class="part-actions"><button id="isolate" class="button subtle">${icon('eye')} 单独查看</button><button id="reset-part" class="button subtle">${icon('rotate-ccw')} 还原</button></div></div><hr><div class="section-heading">${icon('sun')} 灯光与表面</div><div class="segmented light-options"><button data-light="studio" class="active">摄影棚</button><button data-light="daylight">日光</button><button data-light="warm">暖光</button></div><label class="field-label" for="intensity">光线强度 <output id="intensity-value">100%</output></label><input id="intensity" type="range" min="30" max="180" value="100"><label class="field-label" for="direction">光源方向 <output id="direction-value">−35°</output></label><input id="direction" type="range" min="-180" max="180" value="-35"><label class="check-row"><input id="layers" type="checkbox" checked> 模拟 0.2 mm 打印层纹</label><p class="small-note">光泽与层纹为近似模拟，非耗材实测；层纹按装配竖直方向展示。</p><hr><div class="section-heading">${icon('layers')} 装配视图</div><label class="field-label" for="explode">零件展开 <output id="explode-value">0%</output></label><input id="explode" type="range" min="0" max="100" value="0"><label class="check-row"><input id="hardware" type="checkbox" checked> 显示舵机与电子零件</label><p class="small-note model-note">原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。</p></div><button id="agent-info" class="agent-link">${icon('code')} Agent 接口与开放格式 ${icon('arrow-up-right')}</button></aside>
+<aside class="inspector"><div class="inspector-scroll"><div class="panel-title"><h2>外观实验室</h2>${icon('sliders-horizontal')}</div><div class="selected-heading"><span class="eyebrow">SELECTED PART</span><h3 id="selected-name">选择一个零件</h3><div id="selected-meta" class="meta">直接点击模型，或从左侧选择</div></div><div id="part-editor"><label class="field-label" for="part-color">零件颜色 <span id="color-code">#F1EFE7</span></label><div class="color-entry"><input type="color" id="part-color" value="#f1efe7" aria-label="零件颜色"><input id="hex-color" value="#F1EFE7" maxlength="7" aria-label="十六进制颜色"><button id="apply-role" class="text-button" title="应用到相同配色分组">同组应用</button></div><div class="field-label reference-heading">常用参考色</div><div id="quick-colors" class="quick-colors"></div><section id="owned-materials" class="owned-materials"></section><label class="field-label">打印材质</label><div class="material-options">${MATERIALS.map((m) => `<button data-material="${m}">${labels[m]}</button>`).join('')}</div><p id="material-description" class="small-note"></p><label class="check-row"><input type="checkbox" id="same-source"> 同名零件一起调整</label><div class="part-actions"><button id="isolate" class="button subtle">${icon('eye')} 单独查看</button><button id="reset-part" class="button subtle">${icon('rotate-ccw')} 还原</button></div></div><hr><div class="section-heading">${icon('sun')} 灯光与表面</div><div class="segmented light-options"><button data-light="studio" class="active">摄影棚</button><button data-light="daylight">日光</button><button data-light="warm">暖光</button></div><label class="field-label" for="intensity">光线强度 <output id="intensity-value">100%</output></label><input id="intensity" type="range" min="30" max="180" value="100"><label class="field-label" for="direction">光源方向 <output id="direction-value">−35°</output></label><input id="direction" type="range" min="-180" max="180" value="-35"><label class="check-row"><input id="layers" type="checkbox" checked> 模拟 0.2 mm 打印层纹</label><p class="small-note">光泽与层纹为近似模拟，非耗材实测；层纹按装配竖直方向展示。</p><hr><div class="section-heading">${icon('layers')} 装配视图</div><label class="field-label" for="explode">零件展开 <output id="explode-value">0%</output></label><input id="explode" type="range" min="0" max="100" value="0"><label class="check-row"><input id="hardware" type="checkbox" checked> 显示舵机与电子零件</label><p class="small-note model-note">原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。</p></div><button id="agent-info" class="agent-link">${icon('code')} Agent 接口与开放格式 ${icon('arrow-up-right')}</button></aside>
 <section class="palette-tray"><div class="palette-title"><span class="eyebrow">A GOOD START</span><h2>从一组喜欢的颜色开始</h2><span>套用后，还能逐件调整</span><button id="recommend-open" class="recommend-open">按我的耗材推荐 ↗</button></div><div class="preset-list">${presets.map((p, i) => `<button class="preset ${i === 0 ? 'active' : ''}" data-preset="${i}"><span class="swatch-strip">${p.colors.map((c) => `<span style="background:${c}"></span>`).join('')}</span><span class="preset-name">${p.name}</span><span class="preset-tag">${p.tag}</span></button>`).join('')}</div><div class="group-colors"><span>整体微调</span>${['主色', '结构', '点缀'].map((n, i) => `<label><input type="color" data-role-color="${['primary', 'structure', 'accent'][i]}" value="${presets[0].colors[i]}" aria-label="${n}颜色"><span>${n}</span></label>`).join('')}</div></section>
-</main><footer class="footer"><span>Made for humans. Ready for agents.</span><span>模型：Pollen Robotics · CC BY-NC-SA 4.0 <a href="./NOTICE.md" target="_blank" rel="noopener">来源与许可 ↗</a></span></footer>
+</main><footer class="footer"><span>Made for humans. Ready for agents. <a href="https://github.com/LathamZ/microduck-color-studio" target="_blank" rel="noopener noreferrer">GitHub ↗</a></span><span>模型：Pollen Robotics · CC BY-NC-SA 4.0 <a href="./NOTICE.md" target="_blank" rel="noopener">来源与许可 ↗</a></span></footer>
 <div id="toast" role="status" aria-live="polite"></div><input type="file" id="import-file" accept="application/json,.json" hidden><dialog id="agent-dialog"><div class="panel-title"><h2>给 Agent 的入口</h2><button id="close-dialog" class="icon-button" aria-label="关闭">${icon('x')}</button></div><p>稳定零件 ID、可校验的 JSON 方案，以及浏览器中的显式 API。</p><div class="api-links"><a href="./models/parts.json" target="_blank">零件清单 ↗</a><a href="./palette.schema.json" target="_blank">方案 JSON Schema ↗</a><a href="./agent-api.md" target="_blank">API 文档 ↗</a></div><pre>window.colorStudio.getModel()
 window.colorStudio.getPalette()
 window.colorStudio.updateParts(
@@ -93,6 +96,8 @@ window.colorStudio.setLighting({
   preset: 'studio', intensity: 1.2, azimuth: 45
 })</pre><p class="small-note">只更改当前网页的配色。不会修改打印工程，也不会发送打印任务。</p></dialog>`;
 createIcons({ icons });
+installI18n();
+let inventoryManager: ReturnType<typeof inventoryUI> | null = null;
 let state: EditorState,
   viewer: Viewer,
   model: Manifest,
@@ -121,7 +126,7 @@ function drawList() {
   const parts = model.parts.filter(
     (p) =>
       (filter === 'all' || p.printable) &&
-      [p.name, p.id, p.assembly].join(' ').toLowerCase().includes(q),
+      [p.name, t(p.name), p.id, p.assembly, t(p.assembly)].join(' ').toLowerCase().includes(q),
   );
   $('#part-count').textContent = String(parts.length);
   const assemblies = [...new Set(parts.map((p) => p.assembly))];
@@ -151,7 +156,33 @@ function select(id: string) {
   drawList();
   window.dispatchEvent(new CustomEvent('colorstudio:selection', { detail: { id } }));
 }
+function renderOwned() {
+  const host = $('#owned-materials');
+  if (!host || !selected) return;
+  const p = model.parts.find((x) => x.id === selected)!;
+  const f = state.palette.parts[selected];
+  const items = inventoryManager?.getInventory().items || [];
+  const match = items.find(
+    (x) => x.color.toUpperCase() === f.color.toUpperCase() && x.material === f.material,
+  );
+  const compatible = items.filter((x) => (p.defaultMaterial === 'tpu') === (x.material === 'tpu'));
+  host.innerHTML = `<div class="owned-heading"><span>我的已有耗材</span><button class="text-button" data-stock-manage>管理 ↗</button></div>${!p.printable ? '<p class="small-note">标准硬件不使用打印耗材。</p>' : !items.length ? '<p class="small-note">导入库存后，这里会单独展示已有的颜色和材质。</p>' : `<div class="stock-match ${match ? 'in-stock' : 'not-stock'}">${match ? '✓ 已有此颜色与材质' : '库存未记录此组合 · 需补充或替换'}</div><div class="owned-chips">${compatible.map((i) => `<button data-owned="${i.id}" class="owned-chip ${match?.id === i.id ? 'active' : ''}"><b style="background:${i.color}"></b><span><span data-user-content>${escape(i.name)}</span><small>${labels[i.material]}</small></span></button>`).join('') || '<p class="small-note">库存中没有适合此零件的材质。</p>'}</div>`}`;
+  host.querySelector<HTMLElement>('[data-stock-manage]')!.onclick = () => inventoryManager?.open();
+  host.querySelectorAll<HTMLElement>('[data-owned]').forEach(
+    (b) =>
+      (b.onclick = () => {
+        const i = items.find((x) => x.id === b.dataset.owned)!;
+        patch({ color: i.color, material: i.material });
+      }),
+  );
+  document.querySelectorAll<HTMLElement>('[data-quick]').forEach((b) => {
+    const owned = items.some((i) => i.color.toUpperCase() === b.dataset.quick?.toUpperCase());
+    b.classList.toggle('owned-reference', owned);
+    b.title = owned ? '库存已有此色，请在已有耗材中选定材质' : '参考色，库存未记录';
+  });
+}
 function syncInspector() {
+  renderOwned();
   const disabled = !selected;
   $('#part-editor').classList.toggle('disabled', disabled);
   $('#part-editor')
@@ -498,6 +529,9 @@ async function init() {
       toast,
       !isDemo,
     );
+    inventoryManager = stock;
+    renderOwned();
+    window.addEventListener('colorstudio:inventory', renderOwned);
     $('#inventory-open').onclick = stock.open;
     $('#recommend-open').onclick = stock.open;
     const api: ColorStudioAPI = {

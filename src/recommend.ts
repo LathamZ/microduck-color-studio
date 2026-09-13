@@ -65,18 +65,70 @@ export function distance(a: string, b: string) {
     y = lab(b);
   return Math.hypot(...x.map((v, i) => v - y[i]));
 }
+export type RecommendationOptions = { seed?: number };
+function variedPresets(
+  stock: StockItem[],
+  count: number,
+  mode: RecommendationMode,
+  seed: number,
+): ColorPreset[] {
+  let n = seed >>> 0;
+  const random = () => {
+    n = (Math.imul(n, 1664525) + 1013904223) >>> 0;
+    return n / 4294967296;
+  };
+  const owned = [...new Set(stock.filter((x) => x.material !== 'tpu').map((x) => x.color))];
+  const colors = owned.length ? owned : ['#F1EFE7', '#30343B'];
+  const makeAccent = () => {
+    const hue = random() * 360,
+      s = 0.35 + random() * 0.35,
+      l = 0.4 + random() * 0.25;
+    const a = s * Math.min(l, 1 - l);
+    return (
+      '#' +
+      [0, 8, 4]
+        .map((k) => {
+          const h = (k + hue / 30) % 12;
+          return Math.round((l - a * Math.max(-1, Math.min(h - 3, 9 - h, 1))) * 255)
+            .toString(16)
+            .padStart(2, '0');
+        })
+        .join('')
+        .toUpperCase()
+    );
+  };
+  return Array.from({ length: 48 }, (_, i) => {
+    const first = Math.floor(random() * colors.length);
+    const chosen = Array.from(
+      { length: count },
+      (_, j) => colors[j === 0 ? first : Math.floor(random() * colors.length)],
+    );
+    if (colors.length > 1 && count > 1 && chosen[1] === chosen[0])
+      chosen[1] = colors[(first + 1 + Math.floor(random() * (colors.length - 1))) % colors.length];
+    if (mode !== 'stock' && count > 2) chosen[count - 1] = makeAccent();
+    return { name: `灵感组合 ${i + 1}`, tag: '新组合', colors: chosen };
+  });
+}
 export function recommend(
   model: Manifest,
   base: Palette,
   inventory: Inventory,
   presets: ColorPreset[],
   mode: RecommendationMode,
+  options: RecommendationOptions = {},
 ): Recommendation[] {
   validatePalette(base, model);
   const stock = validateInventory(inventory).items;
   if (!['stock', 'add-one', 'paint'].includes(mode)) throw new Error('未知推荐模式');
   const roles = model.colorGroups.map((x) => x.id);
-  const results = presets.map((preset, index) => {
+  if (
+    options.seed !== undefined &&
+    (!Number.isSafeInteger(options.seed) || options.seed < 0 || options.seed > 4294967295)
+  )
+    throw new Error('随机种子必须为 0–4294967295 的整数');
+  const candidatesForLook =
+    options.seed === undefined ? presets : variedPresets(stock, roles.length, mode, options.seed);
+  const results = candidatesForLook.map((preset, index) => {
     const palette = structuredClone(base);
     palette.name = `${preset.name} · ${mode === 'stock' ? '已有耗材' : mode === 'paint' ? '丙烯点缀' : '补充一色'}`;
     const used = new Map<string, Recommendation['used'][number]>(),
@@ -159,7 +211,7 @@ export function recommend(
       total += delta * (mode === 'paint' && paintable.length === g.ids.length ? 0.3 : 1);
     }
     return {
-      id: `${mode}-${index}`,
+      id: `${mode}-${options.seed ?? 0}-${index}`,
       name: preset.name,
       mode,
       palette: validatePalette(palette, model),

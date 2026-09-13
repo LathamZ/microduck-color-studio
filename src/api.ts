@@ -1,5 +1,10 @@
 import type { Finish, Lighting, Manifest, Palette, Surface } from './domain';
-import type { Inventory, Recommendation, RecommendationMode } from './recommend';
+import type {
+  Inventory,
+  Recommendation,
+  RecommendationMode,
+  RecommendationOptions,
+} from './recommend';
 /** Explicit same-page API. All mutation methods use the editor's shared validator/history. */
 export interface ColorStudioAPI {
   readonly version: 1;
@@ -15,7 +20,7 @@ export interface ColorStudioAPI {
   redo(): void;
   getInventory(): Inventory;
   setInventory(value: unknown): Inventory;
-  recommend(mode?: RecommendationMode): Recommendation[];
+  recommend(mode?: RecommendationMode, options?: RecommendationOptions): Recommendation[];
 }
 declare global {
   interface Window {

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { translateText } from '../src/translations.ts';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,7 +39,14 @@ try {
       const inventory = validateInventory(read(required('inventory')));
       const base = flag('in') ? validatePalette(read(required('in')), model) : defaults(model);
       output(
-        recommend(model, base, inventory, presets, (flag('mode') || 'stock') as RecommendationMode),
+        recommend(
+          model,
+          base,
+          inventory,
+          presets,
+          (flag('mode') || 'stock') as RecommendationMode,
+          flag('seed') ? { seed: Number(flag('seed')) } : {},
+        ),
       );
       break;
     }
@@ -84,6 +92,11 @@ try {
       process.exitCode = command ? 1 : 0;
   }
 } catch (error) {
-  process.stderr.write(JSON.stringify({ error: (error as Error).message }) + '\n');
+  process.stderr.write(
+    JSON.stringify({
+      code: 'VALIDATION_ERROR',
+      error: translateText((error as Error).message, flag('lang') === 'zh-CN' ? 'zh-CN' : 'en'),
+    }) + '\n',
+  );
   process.exitCode = 1;
 }

@@ -51,3 +51,9 @@ The website is static. Palettes stay local. JSON imports are parsed as data, nev
 `recommend.ts` is another pure, model-independent module. It reads Inventory + Palette + Manifest + adapter palettes and returns plans without mutating any input. Material compatibility follows manifest defaults; paintability is explicit model metadata. CIE76 color proximity ranks curated palettes; a bounded optional purchase and separate paint coating preserve the distinction between owned filament, suggested filament and surface finish. Duplicate realized looks are removed.
 
 `inventory-ui.ts` binds this module to the human interface. `scripts/palette.ts` and `window.colorStudio` expose the same inventory validator and recommender. Neither invents a user's stock or depends on browser coordinates. Inventory is shared across model packs; palettes remain model-specific.
+
+## Bilingual presentation
+
+`translations.ts` contains the phrase catalog and pure translation function. `i18n.ts` applies that catalog at the DOM presentation boundary, including dynamic labels and accessibility attributes, and remembers original text for reversible switching. Input values and explicitly marked user-content nodes are never translated. It does not mutate the editor state, geometry, identifiers or inventory. Canonical model metadata remains available to agents; part and assembly display names are translated in the UI.
+
+Language selection is saved independently of model state. Query parameters `lang=en` and `lang=zh-CN` provide explicit links. The CLI uses the same pure translation catalog for error messages without importing browser code.

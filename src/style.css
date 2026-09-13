@@ -1462,3 +1462,222 @@ pre {
     font-size: 14px;
   }
 }
+.reference-heading {
+  margin-bottom: 8px;
+  color: #8a988b;
+}
+.owned-materials {
+  background: #f0f6ed;
+  border: 1px solid #dbe8d6;
+  border-radius: 9px;
+  padding: 12px;
+  margin: 17px 0;
+}
+.owned-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.owned-heading .text-button {
+  font-size: 10px;
+}
+.stock-match {
+  font-size: 9px;
+  line-height: 1.6;
+  margin: 10px 0;
+}
+.in-stock {
+  color: #278564;
+}
+.not-stock {
+  color: #ac8142;
+}
+.owned-chips {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.owned-chip {
+  border: 1px solid #dfe8d9;
+  background: #fff;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  text-align: left;
+  font-size: 11px;
+}
+.owned-chip > b {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  border: 1px solid #00000010;
+}
+.owned-chip > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.owned-chip small {
+  font-size: 9px;
+  display: block;
+  color: #94a28e;
+  margin-top: 3px;
+}
+.owned-chip.active {
+  border-color: #6f9f79;
+}
+.owned-reference {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 3px #549971;
+}
+#shuffle-recommend {
+  font-size: 11px;
+}
+.language-toggle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5f7f6a;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+html[lang='en'] .stage h1 {
+  font-size: 27px;
+  letter-spacing: -0.6px;
+}
+html[lang='en'] .part-row {
+  font-size: 11px;
+}
+html[lang='en'] .stage-tools {
+  top: 165px;
+}
+html[lang='en'] .group-colors {
+  gap: 7px;
+}
+html[lang='en'] .palette-title {
+  max-width: 180px;
+}
+html[lang='en'] .preset-name {
+  white-space: normal;
+  font-size: 10px;
+}
+html[lang='en'] .view-controls button {
+  padding-left: 9px;
+  padding-right: 9px;
+}
+html[lang='en'] .part-actions .button {
+  font-size: 10px;
+}
+html[lang='en'] .owned-chip {
+  font-size: 10px;
+}
+html[lang='en'] .stock-match {
+  font-size: 10px;
+}
+html[lang='en'] .inventory-dialog {
+  max-width: 1050px;
+}
+html[lang='en'] .inventory-layout {
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+html[lang='en'] .recommend-card > .button {
+  white-space: normal;
+  line-height: 1.5;
+}
+html[lang='en'] .reference-heading {
+  font-size: 10px;
+}
+@media (max-width: 1150px) {
+  html[lang='en'] .stage h1 {
+    font-size: 23px;
+  }
+  html[lang='en'] .project-label {
+    display: none;
+  }
+  html[lang='en'] .palette-title {
+    max-width: 150px;
+  }
+}
+@media (max-width: 850px) {
+  html[lang='en'] .inventory-layout {
+    grid-template-columns: 1fr;
+  }
+  html[lang='en'] .palette-title {
+    max-width: none;
+  }
+}
+@media (max-width: 560px) {
+  .language-toggle {
+    padding: 8px 5px;
+  }
+  .topbar {
+    gap: 6px;
+  }
+  .top-actions {
+    gap: 4px;
+  }
+  html[lang='en'] .top-actions .inventory-open:before {
+    content: 'Stock';
+  }
+  html[lang='en'] .top-actions .button.primary span {
+    font-size: 0;
+  }
+  html[lang='en'] .top-actions .button.primary span:after {
+    content: 'Export';
+    font-size: 10px;
+  }
+  html[lang='en'] .stage h1 {
+    font-size: 25px;
+  }
+  .brand-sub {
+    letter-spacing: 1px;
+  }
+  html[lang='en'] .material-options {
+    grid-template-columns: 1fr 1fr;
+  }
+  html[lang='en'] .inventory-dialog > .panel-title h2 {
+    font-size: 20px;
+  }
+  html[lang='en'] .group-colors {
+    display: flex;
+  }
+}
+.owned-chips {
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  grid-template-columns: 1fr 1fr;
+}
+.owned-chip {
+  padding: 7px;
+  gap: 6px;
+}
+.owned-chip > b {
+  width: 18px;
+  height: 18px;
+}
+
+.project-github {
+  text-decoration: none;
+  color: var(--accent);
+}
+.project-github:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 560px) {
+  .top-actions .project-github {
+    padding: 7px 4px;
+  }
+  .project-github svg {
+    width: 16px;
+    height: 16px;
+  }
+}
