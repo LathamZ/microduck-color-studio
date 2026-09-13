@@ -34,6 +34,8 @@ export type Manifest = {
   parts: Part[];
   displayTriangles: number;
   geometryUrl: string;
+  mobileGeometryUrl?: string;
+  mobileDisplayTriangles?: number;
   uiNote: string;
   viewDirections?: Partial<
     Record<'front' | 'back' | 'left' | 'right' | 'three-quarter', [number, number, number]>

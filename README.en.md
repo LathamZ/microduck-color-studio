@@ -18,10 +18,30 @@ The preview shows orbiting, whole-model palettes, individual finishes, lighting 
 - **Keep a reproducible look.** Colors, materials, acrylic coatings and lighting share one validated state. Undo and redo changes, import or export JSON, save locally, or download a PNG preview.
 - **Work with your actual stock.** Keep your filament inventory separate from reference colors. The part inspector shows compatible stock and whether the selected color/material combination is available.
 - **Discover another combination.** Compare inventory-only, one-extra-color and acrylic-accent recommendations. Choose **New ideas** to explore different combinations without dropping material constraints.
+- **Export print models.** Upload your own 3MF, link the current look, group by material/color or part, then download a color-preserving multi-plate 3MF project, individual STLs and a JSON manifest.
+- **Give your duck a voice.** A random tagline greets you; shuffle it beside the title.
 - **Use an agent.** Stable instance IDs, versioned JSON schemas, a CLI and an explicit browser API support color, material, lighting, inventory and recommendation operations.
 - **Replace the model.** The renderer and editing state are independent of Microduck. Another model can be mounted through a declarative model pack and adapter.
 
-The interface supports English and Simplified Chinese. Use **EN / 中文** in the header; switching language preserves your look and stock. User-entered names are preserved rather than translated. `?lang=en` and `?lang=zh-CN` provide direct links to either language.
+The interface supports English and Simplified Chinese. Use **globe icon + current language (中文 / English)** in the header; switching language preserves your look and stock. User-entered names are preserved rather than translated. `?lang=en` and `?lang=zh-CN` provide direct links to either language.
+
+## From a look to print plates
+
+1. The main **Import / Export** buttons handle JSON color configurations. Choose **the arrow beside Export → Export 3D print models** for manufacturing files.
+2. Upload the actual **3MF** you intend to print, such as an HD1910 variant. The studio does not turn its XL330 display mesh into HD1910 manufacturing geometry; the coloring view stays unchanged.
+3. Review part links. Unique source names link automatically. Resolve duplicate or unmatched names manually, or assign an independent color/material. Uncheck objects you do not want to print.
+4. Select a **P1S, H2D, A1 mini or X2D** preset, or enter custom bed width, depth and usable height. Set edge margin and spacing. Printer selection affects bed dimensions and multi-plate alignment only; it does not configure temperature, speed or process settings. Group by material/color or by part/material/color, then select **Preview plates**.
+5. Download the ZIP. Open the single **microduck-print-project.3mf** in your slicer to retain color and placement. Individual STL files live in its `stl/` directory; `print-plan.json` records assignments, materials, colors and positions.
+
+STL cannot store color. The single multi-plate 3MF contains colored model arrangements, **not sliced print jobs**. Configure the printer, filament process, supports and brims in your slicer. Source support painting, process settings and G-code are not exported. Acrylic accents are post-processing notes; plate grouping uses the base filament color.
+
+Uploads stay in your browser and are never published with this repository. Source rotation and scale are retained; objects are translated onto the bed and arranged without automatic repair or rescaling. The importer accepts millimeter triangle-mesh 3MFs, including Bambu component references. Resolve modifier/negative volumes in your slicer first. Limits: 100 MB compressed, 300 MB expanded, 3 million triangles and 500 objects.
+
+## Mobile preview
+
+Phones automatically load a roughly 300k-triangle display model with lower pixel density, shadow resolution and environment-map cost. Desktop keeps the roughly 800k-triangle model. JSON import/export and print export are hidden on phones; viewing and finish editing remain available. Browsers without working 3D support, or which lose their graphics context, show a desktop fallback message. iPhone/Safari versions and device memory can still affect loading.
+
+Multi-plate projects use **Bambu Studio / OrcaSlicer** compatible metadata. Other slicers may read geometry and colors without recognizing separate plates.
 
 ## Run locally
 

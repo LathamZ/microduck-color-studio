@@ -1956,5 +1956,7 @@
       0.4,
       0.9
     ]
-  }
+  },
+  "mobileGeometryUrl": "microduck-mobile.glb",
+  "mobileDisplayTriangles": 301594
 }

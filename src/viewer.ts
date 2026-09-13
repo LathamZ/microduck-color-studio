@@ -1,3 +1,4 @@
+import { mobilePreview } from './device';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -37,18 +38,20 @@ export class Viewer {
   private down = { x: 0, y: 0 };
   private size = 300;
   private center = new THREE.Vector3();
+  private mobile = mobilePreview();
   private layerTexture: THREE.CanvasTexture;
   constructor(
     private host: HTMLElement,
     private model: Manifest,
     private onPick: (id: string) => void,
+    private onFailure: (error: Error) => void = () => {},
   ) {
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: !this.mobile,
       alpha: false,
-      preserveDrawingBuffer: true,
+      preserveDrawingBuffer: !this.mobile,
     });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.mobile ? 1.25 : 2));
     this.renderer.setClearColor('#eef0eb');
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -66,14 +69,16 @@ export class Viewer {
     this.controls.maxPolarAngle = Math.PI * 0.91;
     this.pmrem = new THREE.PMREMGenerator(this.renderer);
     const room = new RoomEnvironment();
-    this.environment = this.pmrem.fromScene(room, 0.04);
+    this.environment = this.pmrem.fromScene(room, 0.04, 0.1, 100, {
+      size: this.mobile ? 128 : 256,
+    });
     room.dispose();
     this.scene.environment = this.environment.texture;
     this.scene.add(new THREE.HemisphereLight('#e7f0ff', '#b3ab99', 0.85));
     this.key = new THREE.DirectionalLight('#ffffff', 3.2);
     this.key.position.set(-180, 400, 300);
     this.key.castShadow = true;
-    this.key.shadow.mapSize.set(2048, 2048);
+    this.key.shadow.mapSize.set(this.mobile ? 512 : 2048, this.mobile ? 512 : 2048);
     Object.assign(this.key.shadow.camera, {
       left: -250,
       right: 250,
@@ -138,9 +143,18 @@ export class Viewer {
       )[0];
       if (hit) this.onPick(hit.object.name);
     });
-    const animate = () => {
+    this.renderer.domElement.addEventListener('webglcontextlost', (event) => {
+      event.preventDefault();
+      this.disposed = true;
+      cancelAnimationFrame(this.frame);
+      this.onFailure(new Error('3D rendering context was lost.'));
+    });
+    let lastRender = 0;
+    const animate = (now = 0) => {
       if (this.disposed) return;
       this.frame = requestAnimationFrame(animate);
+      if (document.hidden || (this.mobile && now - lastRender < 32)) return;
+      lastRender = now;
       this.controls.update();
       if (this.box.visible) this.box.update();
       this.renderer.render(this.scene, this.camera);
@@ -153,7 +167,13 @@ export class Viewer {
     gltf.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         if (!known.has(obj.name)) throw new Error(`模型节点未登记：${obj.name}`);
-        obj.geometry = toCreasedNormals(obj.geometry, 0.45);
+        const originalGeometry = obj.geometry;
+        if (this.mobile) {
+          if (!obj.geometry.getAttribute('normal')) obj.geometry.computeVertexNormals();
+        } else {
+          obj.geometry = toCreasedNormals(obj.geometry, 0.45);
+          if (obj.geometry !== originalGeometry) originalGeometry.dispose();
+        }
         obj.material = new THREE.MeshPhysicalMaterial({ color: '#ffffff' });
         obj.castShadow = true;
         obj.receiveShadow = true;

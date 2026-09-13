@@ -15,6 +15,8 @@
     "format:check": "prettier --check src scripts/*.ts tests *.json *.ts *.md docs/*.md .github/*.yml"
   },
   "dependencies": {
+    "@xmldom/xmldom": "^0.9.12",
+    "fflate": "^0.8.3",
     "lucide": "0.468.0",
     "three": "0.180.0"
   },

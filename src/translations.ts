@@ -1,6 +1,58 @@
 /** View-language catalog. IDs, inventory data and palette contracts never depend on locale. */
 export type Locale = 'zh-CN' | 'en';
 export const english: Record<string, string> = {
+  打印机型号: 'Printer model',
+  请选择打印机: 'Choose your printer',
+  自定义打印盘: 'Custom build plate',
+  '打印盘宽度 mm': 'Build plate width mm',
+  '打印盘深度 mm': 'Build plate depth mm',
+  '机型只用于底板尺寸和多盘位置对齐。请在切片软件确认实际喷嘴、耗材和打印工艺。双喷嘴机型保守使用共同可达区域排盘。':
+    'The printer selection is for bed size and multi-plate alignment. Confirm the actual nozzles, filament and process in your slicer. Dual-nozzle presets conservatively use the shared reachable area.',
+
+  '此浏览器暂时无法预览 3D，请用电脑打开本页。':
+    'This browser cannot preview 3D right now. Please open this page on a computer.',
+  '当前浏览器无法完成 3D 加载，请重试或更换浏览器。':
+    'This browser could not load the 3D preview. Retry or use another browser.',
+  错误详情: 'Error details',
+
+  导出: 'Export',
+  '导出 JSON 配色配置': 'Export JSON color configuration',
+  更多导出选项: 'More export options',
+  '导出 3D 打印模型': 'Export 3D print models',
+  '上传实际打印用的 3MF（如 HD1910 版本），再关联当前配色。展示模型保持不变。文件仅在浏览器本地处理。':
+    'Upload your actual print-ready 3MF (such as the HD1910 version), then link it to this look. The display model stays unchanged. Files are processed locally in your browser.',
+  '上传打印模型 .3mf': 'Upload print model .3mf',
+  '可用宽度 mm': 'Usable width mm',
+  '可用深度 mm': 'Usable depth mm',
+  '可用高度 mm': 'Usable height mm',
+  '边距 mm': 'Margin mm',
+  '零件间距 mm': 'Part spacing mm',
+  分盘方式: 'Plate grouping',
+  相同材质与颜色同盘: 'Group by material and color',
+  '部件、材质与颜色分盘': 'Group by part, material and color',
+  '保留源模型的打印朝向与尺寸。请按打印机设置可用区域，并为裙边和支撑留空间。':
+    'Preserves source print orientation and dimensions. Set your printer’s usable area and allow room for brims and supports.',
+  关联配色: 'Link colors',
+  '未匹配的零件可独立选色；不需要的零件取消勾选。':
+    'Choose a finish for unmatched parts; uncheck objects you do not need.',
+  关联配色部件: 'Link to a colored part',
+  独立配色: 'Independent finish',
+  '已按源零件名关联，请核对': 'Matched by source name — please check',
+  '有多个候选，请选择对应部件': 'Multiple candidates — choose the matching part',
+  '未匹配，请独立设置或关联部件': 'Unmatched — set a finish or link a part',
+  打印颜色: 'Print color',
+  预览分盘: 'Preview plates',
+  下载打印包: 'Download print package',
+  分盘俯视图: 'Plate top view',
+  '一个 3MF 项目保留所有盘的颜色和排布，附逐件 STL 与 JSON 清单。切片工艺、支撑涂色和 G-code 不随包导出；请在切片软件中重新设置。丙烯涂色记为后处理，按底材颜色分盘。':
+    'One 3MF project keeps colors and placement for every plate, with individual STL files and a JSON manifest. Set process profiles and support painting in your slicer; these and G-code are not exported. Acrylic is recorded as post-processing; plates use base filament colors.',
+  '正在读取打印模型…': 'Reading print model…',
+  '模型已载入，请核对零件关联和打印材质。': 'Model loaded. Check part links and print materials.',
+  '正在计算分盘…': 'Arranging plates…',
+  '分盘完成。下图为零件占用范围，请在切片软件中检查支撑。':
+    'Plates arranged. The diagram shows part footprints; check supports in your slicer.',
+  '正在生成打印包…': 'Building print package…',
+  '打印包已下载。': 'Print package downloaded.',
   '小鸭子，也有大脾气。': 'Small duck. Big attitude.',
   '今天这只鸭，有点不一样。': 'A different kind of duck today.',
   '出厂靠打印，出彩靠你。': 'Printed into shape. Colored by you.',

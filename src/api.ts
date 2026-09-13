@@ -1,3 +1,5 @@
+import type { PrintSetup } from './print-ui';
+import type { PrintAssignment, PrintOptions, PrintPlan } from './print-project';
 import type { Finish, Lighting, Manifest, Palette, Surface } from './domain';
 import type {
   Inventory,
@@ -8,6 +10,11 @@ import type {
 /** Explicit same-page API. All mutation methods use the editor's shared validator/history. */
 export interface ColorStudioAPI {
   readonly version: 1;
+  importPrintModel(bytes: Uint8Array, name: string): Promise<PrintSetup>;
+  getPrintSetup(): Promise<PrintSetup>;
+  configurePrint(assignments: PrintAssignment[], options: PrintOptions): Promise<PrintPlan>;
+  planPrint(): Promise<PrintPlan>;
+  exportPrint(): Promise<Uint8Array>;
   getModel(): Manifest;
   getPalette(): Palette;
   importPalette(value: unknown): Palette;

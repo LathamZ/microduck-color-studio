@@ -1,3 +1,4 @@
+import { mobilePreview } from './device';
 import { installI18n, locale, t } from './i18n';
 import type { ColorStudioAPI } from './api';
 import { inventoryUI } from './inventory-ui';
@@ -86,7 +87,7 @@ const labels: Record<MaterialKind, string> = {
   tpu: 'TPU',
 };
 $('#app').innerHTML = `
-<header class="topbar"><a class="brand" href="./"><span class="brand-mark">μ</span><span>microduck<span class="brand-sub">COLOR STUDIO</span></span></a><span class="header-divider"></span><span class="project-label">给你的小鸭子，一点个性。</span><div class="top-actions"><span id="save-status" class="saved">本地自动保存</span><a class="project-github button subtle" href="https://github.com/LathamZ/microduck-color-studio" target="_blank" rel="noopener noreferrer" aria-label="在 GitHub 查看项目" title="在 GitHub 查看项目">${icon('github')}</a><button id="inventory-open" class="button subtle inventory-open">我的耗材</button><button id="import" class="button subtle">${icon('upload')}<span>导入</span></button><button id="export" class="button primary">${icon('download')}<span>导出方案</span></button><button id="language-toggle" class="language-toggle" type="button" aria-label="切换语言">${icon('globe')}<span id="language-label" data-user-content>中文</span></button></div></header>
+<header class="topbar"><a class="brand" href="./"><span class="brand-mark"><img src="${import.meta.env.BASE_URL}icon.svg" alt="" width="42" height="42"></span><span>microduck<span class="brand-sub">COLOR STUDIO</span></span></a><span class="header-divider"></span><span class="project-label">给你的小鸭子，一点个性。</span><div class="top-actions"><span id="save-status" class="saved">本地自动保存</span><a class="project-github button subtle" href="https://github.com/LathamZ/microduck-color-studio" target="_blank" rel="noopener noreferrer" aria-label="在 GitHub 查看项目" title="在 GitHub 查看项目">${icon('github')}</a><button id="inventory-open" class="button subtle inventory-open">我的耗材</button><button id="import" class="button subtle">${icon('upload')}<span>导入</span></button><div class="export-split"><button id="export" class="button primary" title="导出 JSON 配色配置">${icon('download')}<span>导出</span></button><button id="export-menu-toggle" class="button primary export-arrow" aria-label="更多导出选项" aria-haspopup="menu" aria-expanded="false" aria-controls="export-menu">${icon('chevron-down')}</button><div id="export-menu" role="menu" hidden><button id="export-print-open" role="menuitem">导出 3D 打印模型</button></div></div><button id="language-toggle" class="language-toggle" type="button" aria-label="切换语言">${icon('globe')}<span id="language-label" data-user-content>中文</span></button></div></header>
 <main class="workspace">
 <aside class="parts-panel"><div class="panel-title"><h2>零件</h2><span id="part-count" class="count">—</span></div><label class="search">${icon('search')}<input id="search" type="search" placeholder="搜索零件或 ID" aria-label="搜索零件"></label><div class="part-filters"><button data-filter="printable" class="active">打印件</button><button data-filter="all">全部</button></div><div id="part-list" class="part-list"></div><div class="parts-footer">${icon('mouse-pointer-2')} 点击模型，也能选择零件</div></aside>
 <section class="stage"><div class="stage-top"><div><div class="eyebrow">YOUR LITTLE COMPANION</div><div class="slogan-row"><h1 id="slogan">小鸭子，也有大脾气。</h1><button id="shuffle-slogan" class="icon-button" aria-label="换一句标语" title="换一句标语">${icon('shuffle')}</button></div><span id="model-name" class="model-label">正在载入装配模型</span></div><span class="live-tag"><b></b> 实时 3D</span></div><div id="viewport"><div id="loading"><span class="loader"></span><span>正在组装你的小鸭子…</span></div></div><div class="stage-tools"><button class="icon-button" id="undo" aria-label="撤销" title="撤销">${icon('undo-2')}</button><button class="icon-button" id="redo" aria-label="重做" title="重做">${icon('redo-2')}</button><span></span><button class="icon-button" id="screenshot" aria-label="导出效果图" title="导出效果图">${icon('camera')}</button><button class="icon-button" id="fit" aria-label="恢复默认视角" title="恢复默认视角">${icon('maximize')}</button></div><div class="stage-bottom"><div class="view-controls"><button data-view="three-quarter" class="active">立体</button><button data-view="front">正面</button><button data-view="left">侧面</button><button data-view="back">背面</button></div><span class="gesture">拖动旋转 · 滚轮缩放</span></div><div class="stage-caption"><span>真实装配模型 · 外观预览</span><span id="selection-caption">选中零件后，可在右侧单独调色</span></div></section>
@@ -499,6 +500,16 @@ function bind() {
     }
   });
 }
+function showViewerFailure(error: Error) {
+  let host = document.getElementById('loading');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'loading';
+    $('#viewport').append(host);
+  }
+  host.innerHTML = `<strong>模型加载失败</strong><span>${mobilePreview() ? '此浏览器暂时无法预览 3D，请用电脑打开本页。' : '当前浏览器无法完成 3D 加载，请重试或更换浏览器。'}</span><button id="retry-model" class="button">重新加载</button><details><summary>错误详情</summary><span data-user-content>${escape(error.message)}</span></details>`;
+  $('#retry-model').onclick = () => location.reload();
+}
 async function init() {
   try {
     const response = await fetch(
@@ -519,10 +530,10 @@ async function init() {
     } catch {
       toast('之前的本地方案不可用，已恢复默认配色');
     }
-    viewer = new Viewer($('#viewport'), model, select);
+    viewer = new Viewer($('#viewport'), model, select, showViewerFailure);
     await viewer.load(
       new URL(
-        model.geometryUrl,
+        mobilePreview() && model.mobileGeometryUrl ? model.mobileGeometryUrl : model.geometryUrl,
         new URL(manifestPath, new URL(import.meta.env.BASE_URL, location.href)),
       ).href,
     );
@@ -559,8 +570,44 @@ async function init() {
     window.addEventListener('colorstudio:inventory', renderOwned);
     $('#inventory-open').onclick = stock.open;
     $('#recommend-open').onclick = stock.open;
+    let printManager: Promise<ReturnType<typeof import('./print-ui').printUI>> | null = null;
+    const printing = () =>
+      (printManager ||= import('./print-ui').then(({ printUI }) =>
+        printUI(model, () => state.palette),
+      ));
+    const closeExportMenu = () => {
+      $('#export-menu').hidden = true;
+      $('#export-menu-toggle').setAttribute('aria-expanded', 'false');
+    };
+    $('#export-menu-toggle').onclick = () => {
+      const menu = $('#export-menu');
+      menu.hidden = !menu.hidden;
+      $('#export-menu-toggle').setAttribute('aria-expanded', String(!menu.hidden));
+      if (!menu.hidden) $('#export-print-open').focus();
+    };
+    document.addEventListener('click', (event) => {
+      if (!(event.target as Element).closest('.export-split')) closeExportMenu();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !$('#export-menu').hidden) {
+        closeExportMenu();
+        $('#export-menu-toggle').focus();
+      }
+    });
+    $('#export-print-open').onclick = () => {
+      closeExportMenu();
+      void printing()
+        .then((p) => p.open())
+        .catch((e) => toast(e.message));
+    };
     const api: ColorStudioAPI = {
       version: 1,
+      importPrintModel: async (bytes, name) => (await printing()).load(bytes, name),
+      getPrintSetup: async () => (await printing()).getSetup(),
+      configurePrint: async (assignments, options) =>
+        (await printing()).configure(assignments, options),
+      planPrint: async () => (await printing()).plan(),
+      exportPrint: async () => (await printing()).export(),
       getInventory: stock.getInventory,
       setInventory: stock.setInventory,
       recommend: stock.recommend,
@@ -614,8 +661,7 @@ async function init() {
       );
     }
   } catch (error) {
-    $('#loading').innerHTML =
-      `<strong>模型加载失败</strong><span>${escape((error as Error).message)}</span><button onclick="location.reload()" class="button">重新加载</button>`;
+    showViewerFailure(error instanceof Error ? error : new Error(String(error)));
     console.error(error);
   }
 }
