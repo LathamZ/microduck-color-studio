@@ -54,7 +54,7 @@ npm run dev
 
 Open the local URL printed by Vite. For production, run `npm run build` and host `dist/` on any static web server.
 
-There is no backend, login, API key, analytics or printer connection. Palettes and inventory stay in the current browser. Export JSON for portable backups.
+There is no backend, login, API key or printer connection. The site uses Google Analytics for traffic statistics (measurement ID: `G-FK57KHWFPV`). Palettes, inventory and uploaded print models are still processed locally and are not sent as custom analytics events. Export JSON for portable backups. Self-hosters can replace or remove the Google tag in `index.html`.
 
 ## Your filaments, your palette
 
