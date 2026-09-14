@@ -294,7 +294,7 @@ export const english: Record<string, string> = {
   下巴: 'Lower beak',
   镜头: 'Camera lens',
   XL330舵机: 'XL330 servo',
-  NPF970电池: 'NP-F970 battery',
+  NPF550电池: 'NP-F550 battery',
   Seeed轴承22x16x4: 'Bearing 22 × 16 × 4',
   Seeed轴承默认: 'Bearing',
   树莓派机器人HAT电路板: 'Robot HAT board',
