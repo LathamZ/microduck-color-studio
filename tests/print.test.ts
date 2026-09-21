@@ -4,6 +4,10 @@ import {
   readPrintProject,
   planPrint,
   exportPrintPackage,
+  matchAction,
+  matchPrintObject,
+  nameSimilarity,
+  MATCH_FLOOR,
   type PrintOptions,
 } from '../src/print-project';
 import { defaults, type Manifest } from '../src/domain';
@@ -73,7 +77,8 @@ describe('print model import and color-preserving plate export', () => {
     expect(p.objects[0].vertices[0]).toEqual([10, 0, 0]);
     expect(p.objects[0].triangles).toHaveLength(4);
     expect(p.objects[1].printable).toBe(false);
-    expect(p.objects[0].suggestedPartIds).toContain(part.id);
+    expect(p.objects[0].matches[0].partId).toBe(part.id);
+    expect(p.objects[0].matches[0].confidence).toBe(1);
   });
   it('corrects winding on mirrored source geometry', () => {
     const p = readPrintProject(source({ mirror: true, cycle: false }), 'mirror', model);
@@ -143,5 +148,99 @@ describe('print model import and color-preserving plate export', () => {
     expect(plan.plates).toHaveLength(1);
     const [x, y] = plan.plates[0].placements;
     expect(x.x + x.size[0] + options.gap).toBeLessThanOrEqual(y.x);
+  });
+});
+
+describe('object-to-part name matching', () => {
+  const printable = model.parts.filter((p) => p.printable);
+  const named = (name: string) => printable.find((p) => p.sourceName === name)!;
+  it('scores identical names as certain and ignores case, extension and separators', () => {
+    const trunk = named('trunk_base');
+    expect(nameSimilarity('trunk_base.stl', 'trunk_base')).toBe(1);
+    expect(nameSimilarity('Trunk-Base', 'trunk_base')).toBe(1);
+    expect(matchPrintObject('trunk_base.stl', model)[0]).toMatchObject({
+      partId: trunk.id,
+      confidence: 1,
+      ambiguous: false,
+    });
+  });
+  it.each([
+    'hip_l_v2.stl',
+    'hip_l (1).stl',
+    '04-02-hip_l.stl',
+    'hip_l left_extra.stl',
+    'final_hip_l.stl',
+  ])('still matches %s at 80% confidence or better', (name) => {
+    const best = matchPrintObject(name, model)[0];
+    expect(best.partId).toBe(named('hip_l').id);
+    expect(best.confidence).toBeGreaterThanOrEqual(0.8);
+  });
+  it('does not call a match contested just because other parts exist', () => {
+    const best = matchPrintObject('trunk_base.stl', model)[0];
+    expect(best.confidence).toBe(1);
+    expect(best.ambiguous).toBe(false);
+    const shell = matchPrintObject('shell.stl', model)[0];
+    expect(shell.ambiguous).toBe(true);
+  });
+  it('flags a close call as ambiguous instead of guessing silently', () => {
+    const left = named('upper_leg_left');
+    const best = matchPrintObject('upper_leg.stl', model)[0];
+    expect(best.ambiguous).toBe(true);
+    expect(best.confidence).toBeGreaterThanOrEqual(0.5);
+    expect([named('upper_leg_left').id, named('upper_leg_right').id]).toContain(best.partId);
+    expect(best.partId).toBe(left.id);
+  });
+  it('does not treat an opposite side as the same part', () => {
+    expect(nameSimilarity('left_shell', 'right_shell')).toBeLessThan(0.5);
+    expect(nameSimilarity('upper_leg_left', 'upper_leg_right')).toBeLessThan(0.5);
+  });
+  it('leaves unrelated objects unmatched instead of inventing a default', () => {
+    for (const name of ['spool_holder_bracket', 'zz_widget_v9'])
+      for (const m of matchPrintObject(name, model)) expect(m.confidence).toBeLessThan(MATCH_FLOOR);
+    expect(matchPrintObject('', model)).toHaveLength(0);
+    expect(matchPrintObject('   ', model)).toHaveLength(0);
+  });
+  it('marks identical duplicate source names as ambiguous', () => {
+    const duplicates = printable.filter(
+      (p) => printable.filter((x) => x.sourceName === p.sourceName).length > 1,
+    );
+    if (!duplicates.length) return;
+    const best = matchPrintObject(duplicates[0].sourceName, model)[0];
+    expect(best.confidence).toBe(1);
+    expect(best.ambiguous).toBe(true);
+  });
+  it('keeps unmatched objects out of the auto-assignment path', () => {
+    const p = readPrintProject(source(), 'source', model);
+    const unmatched = { ...p.objects[0], name: 'zz_unknown_widget_v9', matches: [] };
+    expect(unmatched.matches.filter((m) => m.confidence >= MATCH_FLOOR)).toHaveLength(0);
+    expect(p.objects[0].matches.filter((m) => m.confidence >= MATCH_FLOOR).length).toBeGreaterThan(
+      0,
+    );
+  });
+});
+
+describe('confidence bands', () => {
+  it('applies 80% and above without asking', () => {
+    expect(matchAction(1, { linked: true, chosen: false })).toBe('auto');
+    expect(matchAction(0.8, { linked: true, chosen: false })).toBe('auto');
+  });
+  it('asks for one confirmation between 50% and 80%', () => {
+    for (const confidence of [0.5, 0.62, 0.79])
+      expect(matchAction(confidence, { linked: true, chosen: false })).toBe('confirm');
+  });
+  it('requires a deliberate choice below 50% or with no candidate at all', () => {
+    expect(matchAction(0.49, { linked: false, chosen: false })).toBe('choose');
+    expect(matchAction(0.2, { linked: false, chosen: false })).toBe('choose');
+    expect(matchAction(null, { linked: false, chosen: false })).toBe('choose');
+  });
+  it('treats a contested match as a confirmation even when the score is high', () => {
+    expect(matchAction(1, { linked: true, chosen: false, contested: true })).toBe('confirm');
+    expect(matchAction(0.86, { linked: true, chosen: false, contested: true })).toBe('confirm');
+    expect(matchAction(0.86, { linked: true, chosen: false })).toBe('auto');
+  });
+  it('accepts a row the user already decided, whatever the score says', () => {
+    expect(matchAction(0.1, { linked: false, chosen: true })).toBe('auto');
+    expect(matchAction(null, { linked: true, chosen: true })).toBe('auto');
+    expect(matchAction(0.9, { linked: true, chosen: true })).toBe('auto');
   });
 });

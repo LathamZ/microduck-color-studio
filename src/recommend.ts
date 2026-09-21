@@ -1,12 +1,14 @@
 import {
+  FLEXIBLE_MATERIALS,
   isColor,
   MATERIALS,
   validatePalette,
   type Manifest,
   type MaterialKind,
   type Palette,
+  type StockItem,
 } from './domain';
-export type StockItem = { id: string; name: string; color: string; material: MaterialKind };
+export type { StockItem };
 export type Inventory = { schemaVersion: 1; items: StockItem[] };
 export type RecommendationMode = 'stock' | 'add-one' | 'paint';
 export type ColorPreset = { name: string; tag: string; colors: string[] };
@@ -45,6 +47,64 @@ export function validateInventory(input: unknown): Inventory {
       ids.add(i.id);
       return { id: i.id, name: i.name.trim(), color: i.color.toUpperCase(), material: i.material };
     }),
+  };
+}
+/**
+ * Read stored filament data without ever throwing it away. Items are validated one by one so
+ * a single bad entry cannot cost the user their whole inventory, and a payload that cannot be
+ * read at all is handed back untouched for a backup.
+ */
+export function readStoredInventory(storage: Pick<Storage, 'getItem'> | null): {
+  inventory: Inventory;
+  dropped: number;
+  raw: string | null;
+  readable: boolean;
+} {
+  const empty: Inventory = { schemaVersion: 1, items: [] };
+  if (!storage) return { inventory: empty, dropped: 0, raw: null, readable: true };
+  let raw: string | null = null;
+  try {
+    raw = storage.getItem('color-studio:inventory');
+  } catch {
+    return { inventory: empty, dropped: 0, raw: null, readable: false };
+  }
+  if (!raw) return { inventory: empty, dropped: 0, raw: null, readable: true };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { inventory: empty, dropped: 0, raw, readable: false };
+  }
+  try {
+    return { inventory: validateInventory(parsed), dropped: 0, raw, readable: true };
+  } catch {
+    /* fall through to the tolerant pass below */
+  }
+  const source = parsed as Partial<Inventory>;
+  const candidates = Array.isArray(source?.items) ? source.items : [];
+  const kept: unknown[] = [];
+  let dropped = 0;
+  const seen = new Set<string>();
+  for (const item of candidates.slice(0, 200)) {
+    const candidate = item as Partial<StockItem>;
+    const id = candidate?.id;
+    if (typeof id !== 'string' || seen.has(id)) {
+      dropped++;
+      continue;
+    }
+    seen.add(id);
+    try {
+      kept.push(validateInventory({ schemaVersion: 1, items: [item] }).items[0]);
+    } catch {
+      dropped++;
+    }
+  }
+  return {
+    inventory: { schemaVersion: 1, items: kept as StockItem[] },
+    dropped,
+    raw,
+    // Nothing survived: the payload is kept for the user rather than replaced by defaults.
+    readable: kept.length > 0,
   };
 }
 // CIE76 in D65 Lab: transparent, deterministic proximity, not a subjective beauty score.
@@ -149,7 +209,8 @@ export function recommend(
     }
     // At most one discretionary spool; missing flexible material is always explicitly listed.
     const candidates = [...groups.values()].map((g) => {
-      const valid = stock.filter((s) => (g.flex ? s.material === 'tpu' : s.material !== 'tpu'));
+      // Flexible parts may only use flexible filament; every other part stays rigid.
+      const valid = stock.filter((s) => FLEXIBLE_MATERIALS.includes(s.material) === g.flex);
       const nearest = valid
         .slice()
         .sort(
@@ -194,8 +255,13 @@ export function recommend(
       };
       item.count += g.ids.length;
       used.set(nearest.id, item);
+      // Recommended spools stay bound, so editing the library later updates the applied look.
       for (const id of g.ids)
-        palette.parts[id] = { color: nearest.color, material: nearest.material };
+        palette.parts[id] = {
+          color: nearest.color,
+          material: nearest.material,
+          stockId: nearest.id,
+        };
       const paintable = model.parts
         .filter((p) => g.ids.includes(p.id) && p.paintable === true)
         .map((p) => p.id);

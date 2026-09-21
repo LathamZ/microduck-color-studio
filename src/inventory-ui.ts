@@ -1,5 +1,6 @@
-import { MATERIALS, type Manifest, type Palette, type MaterialKind } from './domain';
+import { MATERIALS, MATERIAL_LABELS, type Manifest, type Palette } from './domain';
 import {
+  readStoredInventory,
   validateInventory,
   recommend,
   type Inventory,
@@ -8,15 +9,7 @@ import {
   type ColorPreset,
   type RecommendationOptions,
 } from './recommend';
-const names: Record<MaterialKind, string> = {
-  pla: 'PLA',
-  'matte-pla': '哑光 PLA',
-  petg: 'PETG',
-  'matte-petg': '哑光 PETG',
-  'metallic-petg': '金属质感 PETG',
-  'pla-cf': 'PLA-CF',
-  tpu: 'TPU',
-};
+const names = MATERIAL_LABELS;
 const esc = (s: string) =>
   s.replace(
     /[&<>"']/g,
@@ -30,12 +23,22 @@ export function inventoryUI(
   notify: (s: string) => void,
   persist = true,
 ) {
-  let inventory: Inventory = { schemaVersion: 1, items: [] };
-  try {
-    const s = persist ? localStorage.getItem('color-studio:inventory') : null;
-    if (s) inventory = validateInventory(JSON.parse(s));
-  } catch {
-    notify('库存数据不可用，请重新录入或导入备份');
+  const stored = readStoredInventory(persist ? localStorage : null);
+  let inventory: Inventory = stored.inventory;
+  /** Set while the stored data could not be read, so nothing overwrites it. */
+  let preserveUnreadable = !stored.readable;
+  if (stored.raw && !stored.readable) {
+    // Keep the original bytes under a backup key before the editor writes anything.
+    try {
+      localStorage.setItem('color-studio:inventory:backup', stored.raw);
+      notify(
+        '已有耗材数据无法识别，原始内容已备份到 color-studio:inventory:backup，请导入 JSON 或重新录入',
+      );
+    } catch {
+      notify('已有耗材数据无法识别，请导出备份或重新录入');
+    }
+  } else if (stored.dropped) {
+    notify(`已有耗材中有 ${stored.dropped} 项无法识别，已跳过，其余记录保留`);
   }
   let seed: number | undefined;
   let mode: RecommendationMode = 'stock',
@@ -43,12 +46,14 @@ export function inventoryUI(
   const dialog = document.createElement('dialog');
   dialog.id = 'inventory-dialog';
   dialog.className = 'inventory-dialog';
-  dialog.innerHTML = `<div class="panel-title"><div><span class="eyebrow">WORK WITH WHAT YOU HAVE</span><h2>我的耗材与配色灵感</h2></div><button class="icon-button inventory-close" aria-label="关闭耗材窗口">×</button></div><div class="inventory-layout"><section><div class="inventory-heading"><h3>已有耗材 <span id="stock-count"></span></h3><button id="add-stock" class="button subtle">＋ 添加</button></div><div id="stock-list"></div><div class="inventory-actions"><button id="export-stock" class="text-button">导出库存 JSON</button><button id="import-stock" class="text-button">导入库存 JSON</button></div><input id="stock-file" type="file" accept="application/json,.json" hidden><p class="small-note">记录你实际拥有的耗材。名称、颜色与材质保存在此浏览器中；不会假设你拥有某卷耗材。</p></section><section><div class="inventory-heading"><h3>配色推荐</h3><button id="shuffle-recommend" class="button subtle">↻ 换一换</button></div><div class="recommend-modes segmented"><button data-mode="stock" class="active">只用已有</button><button data-mode="add-one">补充一色</button><button data-mode="paint">丙烯点缀</button></div><p id="recommend-mode-note" class="small-note"></p><div id="recommend-list"></div></section></div>`;
+  dialog.innerHTML = `<div class="panel-title"><div><span class="eyebrow">WORK WITH WHAT YOU HAVE</span><h2>我的耗材与配色灵感</h2></div><button class="icon-button inventory-close" aria-label="关闭耗材窗口">×</button></div><div class="inventory-layout"><section><div class="inventory-heading"><h3>已有耗材 <span id="stock-count"></span></h3><button id="add-stock" class="button subtle">＋ 添加</button></div><div id="stock-list"></div><div class="inventory-actions"><button id="export-stock" class="text-button">导出库存 JSON</button><button id="import-stock" class="text-button">导入库存 JSON</button></div><input id="stock-file" type="file" accept="application/json,.json" hidden><p class="small-note">记录你实际拥有的耗材。名称、颜色与材质保存在此浏览器中；不会假设你拥有某卷耗材。改了颜色或材质后，联动的零件会一起更新。</p></section><section><div class="inventory-heading"><h3>配色推荐</h3><button id="shuffle-recommend" class="button subtle">↻ 换一换</button></div><div class="recommend-modes segmented"><button data-mode="stock" class="active">只用已有</button><button data-mode="add-one">补充一色</button><button data-mode="paint">丙烯点缀</button></div><p id="recommend-mode-note" class="small-note"></p><div id="recommend-list"></div></section></div>`;
   document.body.append(dialog);
   const q = <T extends HTMLElement = HTMLElement>(s: string) => dialog.querySelector<T>(s)!;
   function save() {
     try {
-      if (persist) localStorage.setItem('color-studio:inventory', JSON.stringify(inventory));
+      // Never write over data that could not be read; the user has to edit or import first.
+      if (persist && !preserveUnreadable)
+        localStorage.setItem('color-studio:inventory', JSON.stringify(inventory));
     } catch {
       notify('无法自动保存库存，请导出 JSON 备份');
     }
@@ -56,14 +61,22 @@ export function inventoryUI(
       new CustomEvent('colorstudio:inventory', { detail: structuredClone(inventory) }),
     );
   }
+  /** How many parts of the current look follow each spool; shows what a color change will touch. */
+  function linkedCounts() {
+    const counts = new Map<string, number>();
+    for (const finish of Object.values(getPalette().parts))
+      if (finish.stockId) counts.set(finish.stockId, (counts.get(finish.stockId) || 0) + 1);
+    return counts;
+  }
   function drawStock() {
+    const linked = linkedCounts();
     q('#stock-count').textContent = `${inventory.items.length} 卷`;
     q('#stock-list').innerHTML = inventory.items.length
       ? inventory.items
-          .map(
-            (i) =>
-              `<div class="stock-row" data-stock="${i.id}"><input type="color" value="${i.color}" data-field="color" aria-label="${esc(i.name)}颜色"><div><input class="stock-name" value="${esc(i.name)}" data-field="name" aria-label="耗材名称" maxlength="80"><select data-field="material" aria-label="${esc(i.name)}材质">${MATERIALS.map((m) => `<option value="${m}" ${m === i.material ? 'selected' : ''}>${names[m]}</option>`).join('')}</select></div><button data-remove="${i.id}" class="icon-button" aria-label="移除${esc(i.name)}">×</button></div>`,
-          )
+          .map((i) => {
+            const count = linked.get(i.id) || 0;
+            return `<div class="stock-row" data-stock="${i.id}"><input type="color" value="${i.color}" data-field="color" aria-label="${esc(i.name)}颜色"><div><input class="stock-name" value="${esc(i.name)}" data-field="name" aria-label="耗材名称" maxlength="80"><select data-field="material" aria-label="${esc(i.name)}材质">${MATERIALS.map((m) => `<option value="${m}" ${m === i.material ? 'selected' : ''}>${names[m]}</option>`).join('')}</select>${count ? `<small class="stock-linked">已联动 ${count} 个零件 · 改色时会一起更新</small>` : ''}</div><button data-remove="${i.id}" class="icon-button" aria-label="移除${esc(i.name)}">×</button></div>`;
+          })
           .join('')
       : '<div class="stock-empty">先添加你已有的耗材。<br>推荐会从真实库存开始。</div>';
   }
@@ -96,6 +109,8 @@ export function inventoryUI(
   }
   function setInventory(value: unknown) {
     inventory = validateInventory(value);
+    // The user is authoring now: the unreadable payload is no longer protected.
+    preserveUnreadable = false;
     save();
     drawStock();
     drawPlans();

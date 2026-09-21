@@ -20,7 +20,7 @@ export const english: Record<string, string> = {
   更多导出选项: 'More export options',
   '导出 3D 打印模型': 'Export 3D print models',
   '上传实际打印用的 3MF（如 HD1910 版本），再关联当前配色。展示模型保持不变。文件仅在浏览器本地处理。':
-    'Upload your actual print-ready 3MF (such as the HD1910 version), then link it to this look. The display model stays unchanged. Files are processed locally in your browser.',
+    'Upload your actual print-ready 3MF (such as the HD1910 version), then link it to this scheme. The display model stays unchanged. Files are processed locally in your browser.',
   '上传打印模型 .3mf': 'Upload print model .3mf',
   '可用宽度 mm': 'Usable width mm',
   '可用深度 mm': 'Usable depth mm',
@@ -74,11 +74,11 @@ export const english: Record<string, string> = {
   '给你的小鸭子，一点个性。': 'A little character for your little duck.',
   '让每一面，都像你。': 'Make every side your own.',
   从一组喜欢的颜色开始: 'Start with a palette you love',
-  '套用后，还能逐件调整': 'Apply a look, then make it yours',
-  '按我的耗材推荐 ↗': 'Find looks for my filaments ↗',
-  本地自动保存: 'Saved locally',
-  已保存到此浏览器: 'Saved in this browser',
-  '自动保存不可用，请导出方案': 'Autosave unavailable — export your look',
+  '套用后，还能逐件调整': 'Apply a scheme, then make it yours',
+  '按我的耗材推荐 ↗': 'Find schemes for my filaments ↗',
+  本地自动保存: 'Autosaved',
+  已保存: 'Saved',
+  '自动保存不可用，请导出方案': 'Autosave unavailable — export your scheme',
   我的耗材与配色灵感: 'Your filaments. Fresh possibilities.',
   我的已有耗材: 'Your available filaments',
   我的耗材: 'My filaments',
@@ -143,7 +143,7 @@ export const english: Record<string, string> = {
   'Agent 接口与开放格式': 'Agent API & open formats',
   '给 Agent 的入口': 'Built for agents, too',
   '稳定零件 ID、可校验的 JSON 方案，以及浏览器中的显式 API。':
-    'Stable part IDs, validated JSON looks, and an explicit browser API.',
+    'Stable part IDs, validated JSON schemes, and an explicit browser API.',
   '零件清单 ↗': 'Part manifest ↗',
   '方案 JSON Schema ↗': 'Palette JSON Schema ↗',
   'API 文档 ↗': 'API documentation ↗',
@@ -153,6 +153,15 @@ export const english: Record<string, string> = {
     'Inventory unavailable. Add your stock again or import a backup.',
   '无法自动保存库存，请导出 JSON 备份': 'Inventory could not be saved. Export a JSON backup.',
   已有耗材: 'Available filaments',
+  '已有耗材数据无法识别，原始内容已备份到 color-studio:inventory:backup，请导入 JSON 或重新录入':
+    'Your filament data could not be read. The original was backed up to color-studio:inventory:backup — import a JSON backup or enter it again.',
+  '已有耗材数据无法识别，请导出备份或重新录入':
+    'Your filament data could not be read. Back it up or enter it again.',
+  '已有耗材中有 ': 'Your filaments included ',
+  ' 项无法识别，已跳过，其余记录保留': ' unreadable entries. They were skipped and the rest kept.',
+  无法识别的配色数据: 'Unrecognized palette data',
+  '之前的本地方案无法读取，已保留原始备份并恢复默认配色':
+    'The stored look could not be read. Its original data was kept as a backup and the default look was restored.',
   '＋ 添加': '+ Add',
   耗材名称: 'Filament name',
   '导出库存 JSON': 'Export inventory JSON',
@@ -161,7 +170,7 @@ export const english: Record<string, string> = {
   '推荐会从真实库存开始。': 'Recommendations start with your real stock.',
   '记录你实际拥有的耗材。名称、颜色与材质保存在此浏览器中；不会假设你拥有某卷耗材。':
     'Record the filaments you actually own. Names, colors and materials stay in this browser. Nothing is assumed to be in stock.',
-  配色推荐: 'Recommended looks',
+  配色推荐: 'Recommended schemes',
   只用已有: 'In stock',
   补充一色: 'Add one color',
   丙烯点缀: 'Paint accents',
@@ -172,7 +181,7 @@ export const english: Record<string, string> = {
     'Prioritize your stock and suggest at most one extra color spool. Missing essential materials are listed separately.',
   '优先用现有料打印，仅为模型标记为可涂色的硬质外观件建议丙烯笔。':
     'Print with your stock. Suggest acrylic only for rigid exterior parts explicitly marked as paintable.',
-  '添加耗材后，会自动出现三组推荐。': 'Add filaments to discover recommended looks.',
+  '添加耗材后，会自动出现三组推荐。': 'Add filaments to discover recommended schemes.',
   现有料可打印: 'Filaments in stock',
   需要补充耗材: 'Additional filament needed',
   '缺少 TPU，柔性件不能用硬质料替代':
@@ -184,14 +193,14 @@ export const english: Record<string, string> = {
     'Print with your filament, then add acrylic to eligible exterior parts. Test adhesion on a sample first.',
   '保留已有打印本色，仅模拟表面涂色；先用试片验证附着。':
     'Keep the base filament color. Preview surface paint only; test adhesion on a sample.',
-  '这组配色无需额外丙烯点缀。': 'This look needs no extra acrylic accents.',
+  '这组配色无需额外丙烯点缀。': 'This scheme needs no extra acrylic accents.',
   '预览方案（需补料）': 'Preview · filament needed',
-  预览这组配色: 'Preview this look',
+  预览这组配色: 'Preview this scheme',
   '已预览推荐配色；请按推荐清单补齐耗材。':
     'Preview applied. Check the list for additional filament.',
   '已预览丙烯涂色效果，打印本色保留在方案中。':
     'Paint preview applied. The base filament color is preserved.',
-  已使用库存耗材配色: 'Inventory-based look applied',
+  已使用库存耗材配色: 'Inventory-based scheme applied',
   请先添加已有耗材: 'Add your filaments first',
   已换一组新的配色灵感: 'Fresh color ideas are ready',
   '当前库存可组成的不同外观有限，可以增加颜色或试试补充一色。':
@@ -200,10 +209,10 @@ export const english: Record<string, string> = {
   库存文件过大: 'Inventory file is too large',
   '请输入 #RRGGBB 格式的颜色': 'Enter a color in #RRGGBB format',
   效果图已导出: 'Preview image exported',
-  方案已导入: 'Look imported',
+  方案已导入: 'Scheme imported',
   '方案文件不得超过 1 MB': 'A palette file must be under 1 MB',
   '之前的本地方案不可用，已恢复默认配色':
-    'The previous local look was unavailable. Defaults restored.',
+    'The previous local scheme was unavailable. Defaults restored.',
   '方案必须是 JSON 对象': 'A palette must be a JSON object',
   不支持的方案版本: 'Unsupported palette version',
   此方案属于其他模型: 'This palette belongs to a different model',
@@ -240,8 +249,8 @@ export const english: Record<string, string> = {
   结构: 'Structure',
   点缀: 'Accent',
   '哑光 PLA': 'Matte PLA',
-  默认配色: 'Default look',
-  灵感组合: 'Fresh look',
+  默认配色: 'Default scheme',
+  灵感组合: 'Fresh scheme',
   新组合: 'New combination',
   象牙白: 'Ivory',
   石墨灰: 'Graphite',
@@ -319,7 +328,7 @@ export const english: Record<string, string> = {
   材质: ' material',
   耗材: 'Filament ',
   卷: ' spools',
-  导出方案: 'Export look',
+  导出方案: 'Export scheme',
   导出效果图: 'Export image',
   恢复默认视角: 'Reset view',
   导入: 'Import',
@@ -334,6 +343,179 @@ export const english: Record<string, string> = {
   '模型：': 'Model: ',
   '已套用「': 'Applied “',
   '」': '”',
+
+  '丝绸 PLA': 'Silk PLA',
+  '碳纤 PETG': 'PETG-CF',
+  '尼龙 PA': 'Nylon PA',
+  碳纤尼龙: 'Nylon CF',
+  '丝绸般的光泽与柔和流动感，层纹依然可见。':
+    'A silk-like sheen with a soft flow; layer lines stay visible.',
+  '碳纤 PETG 的哑光颗粒感，比普通 PETG 更少反光。':
+    'The matte grain of PETG-CF, with less glare than plain PETG.',
+  '工程塑料的半哑光表面，略带光泽，比 PLA 更耐热。':
+    'A semi-matte engineering plastic, lightly glossy and more heat-tolerant than PLA.',
+  '户外工程塑料，细腻哑光，耐候优于 ABS。':
+    'A fine matte outdoor engineering plastic that weathers better than ABS.',
+  '高强度工程塑料，高光泽与更深的反射。':
+    'A high-strength engineering plastic with deep, glossy reflections.',
+  '尼龙特有的细腻绒感与半哑光表面，韧性好。':
+    'The fine, softly fuzzy semi-matte surface of nylon, with good toughness.',
+  '碳纤尼龙的深色哑光表面，刚性好、层纹更明显。':
+    'A dark matte carbon nylon with high stiffness and clearer layer lines.',
+
+  '中性白顶光加冷色补光：高光集中、阴影干净，最接近商品图。':
+    'Neutral key light from above with a cool fill: tight highlights, clean shadows, closest to product photos.',
+  '高角度暖白日光加天空环境光：整体更亮，阴影短而清晰。':
+    'A high warm-white sun with sky ambient light: brighter overall, with short, crisp shadows.',
+  '低角度橙色暖光、深色背景：阴影被拉长，明暗对比最强。':
+    'A low amber lamp on a dark backdrop: stretched shadows and the strongest contrast.',
+
+  联动: 'Linked',
+  ' · 已联动': ' · linked',
+  ' · 已联动，素材库改色时此零件会跟着变': ' · linked; edit this spool and the part follows',
+  解除: 'Unlink',
+  '已联动 ': 'Linked to ',
+  ' 个零件 · 改色时会一起更新': ' parts · they update with it',
+  已解除与素材库的联动: 'Unlinked from your filaments',
+  '已按素材库更新 ': 'Updated ',
+  ' 个联动零件': ' linked parts from your filaments',
+  '耗材绑定无效：': 'Invalid filament link: ',
+  '绑定的耗材已从素材库移除 · 已保留当前颜色':
+    'This filament was removed from your library — the last color is kept',
+  '未联动素材 · 点选一卷耗材即可跟随它': 'Not linked — pick a spool below to follow it',
+  '联动后，在「我的耗材」里改这卷料的颜色或材质，零件会一起更新。':
+    'Once linked, changing that spool’s color or material in “My filaments” updates this part too.',
+  '改了颜色或材质后，联动的零件会一起更新。':
+    'Linked parts follow any color or material change here.',
+
+  配色方案: 'Color scheme',
+  我的配色方案: 'My color schemes',
+  保存与切换配色方案: 'Save and switch color schemes',
+  保存当前配色: 'Save current colors',
+  覆盖同名方案: 'Overwrite same name',
+  方案名称: 'Scheme name',
+  给这套配色起个名字: 'Name this scheme',
+  请先给这套配色起个名字: 'Give this scheme a name first',
+  当前: 'Current',
+  套用: 'Apply',
+  重命名: 'Rename',
+  用当前配色覆盖: 'Overwrite with current colors',
+  删除: 'Delete',
+  确认删除: 'Confirm delete',
+  再点一次即可删除这套方案: 'Click delete again to remove this scheme',
+  '还没有保存的方案。': 'No saved schemes yet.',
+  '调好颜色后点「保存当前配色」，随时一键切回。':
+    'Tune your colors, then use “Save current colors” to switch back any time.',
+  '当前配色与「': 'Current colors match “',
+  '」一致，共保存 ': '” · ',
+  ' 套。': ' schemes saved.',
+  '当前配色有改动，保存后会新增一套或覆盖同名方案。':
+    'Colors changed since the last save; saving adds a scheme or replaces the one with the same name.',
+  '配色方案保存在此浏览器，最多 ': 'Color schemes live in this browser, up to ',
+  '已保存「': 'Saved “',
+  '已用当前配色覆盖「': 'Replaced “',
+  '已重命名为「': 'Renamed to “',
+  '已删除「': 'Deleted “',
+  未找到该配色方案: 'That scheme no longer exists',
+  '本地保存不可用，请导出 JSON 备份你的方案':
+    'Local saving is unavailable. Export your palette JSON to keep it.',
+
+  '零件名会按相似度自动匹配；未匹配的零件按源文件颜色导出。':
+    'Part names are matched by similarity; unmatched parts are exported in their source colors.',
+  '我已核对以上零件，确认按当前设置导出': 'I reviewed the marked parts and confirm this export',
+  '已按零件名自动匹配 · 可信度 ': 'Matched by part name · confidence ',
+  '已选最相近的零件 · 可信度仅 ': 'Closest available part · confidence only ',
+  '%，请核对': '%, please check',
+  '另有相近候选（': 'Another close candidate (',
+  '%，低于 80%：请核对后勾选确认': '%, below 80% — check it and tick the confirmation',
+  '%），请核对选中的零件': '%) — check the selected part',
+  '有多个零件同名（': 'Several parts share this name (',
+  '%），请确认选中的零件': '%) — confirm the selected part',
+  '已手动关联，导出时使用此零件的配色': 'Linked by hand; this part’s colors are used',
+  '未匹配到零件 · 请在列表中手动选择零件': 'No matching part — source colors will be used',
+
+  '，请手动选择零件': '%, pick a part by hand if you want',
+  '已选择独立配色，按源文件颜色导出': 'Independent finish chosen; the source colors are exported',
+  '已手动选择这个零件，导出时使用它的配色':
+    'Part chosen by hand; its colors are used in the export',
+  '匹配度 ': 'Match ',
+
+  ' 个零件需要留意：': ' parts worth a look: ',
+  ' 个零件未匹配到配色，将保持源文件颜色导出。':
+    ' parts have no matching colors and keep their source colors.',
+  ' 个零件匹配度低于 80%，已选最相近的零件，请核对。':
+    ' parts match below 80%; the closest part is used — please check.',
+
+  ' 等': ' and others',
+  '未匹配到零件 · 最高可信度仅 ': 'No matching part · best confidence only ',
+  '请选择零件…': 'Choose a part…',
+  ' 个零件未匹配到配色。请手动选择零件后再导出。':
+    ' parts with no matching colors. Pick their parts before exporting.',
+  '检测到 ': 'Found ',
+  '，请手动选择零件后再导出': ' without matching colors. Pick their parts before exporting.',
+
+  ' 个零件匹配度低于 80%。请核对并勾选确认后再导出。':
+    ' parts match below 80%. Check them and tick the confirmation before exporting.',
+  '请先在列表中为 ': 'Pick a part for the ',
+  ' 个标有红色 * 的零件选择零件。': ' red-starred parts in the list first.',
+  '请先核对 ': 'Check the ',
+  ' 个匹配度低于 80% 的零件，并勾选下方的确认项。':
+    ' parts below 80% and tick the confirmation below first.',
+  '请先手动选择标有红色 * 的零件': 'Pick the red-starred parts first',
+  '请先核对标有 * 的零件并勾选确认': 'Check the starred parts and tick the confirmation first',
+
+  '分盘完成，但 ': 'Plates arranged, but ',
+  ' 个零件仍需处理（已标 *）。请处理后再导出。':
+    ' parts are still marked with *; unmatched ones are plated in their source colors.',
+  '模型已载入，但有 ': 'Model loaded, but ',
+  '模型已载入，零件已按名称自动匹配，请核对打印材质。':
+    'Model loaded. Parts were matched by name; check the print materials.',
+
+  ' 个零件仍未匹配到配色（红色 *）。请核对后勾选确认再导出。':
+    ' parts still have no matching colors (red star). Review and confirm before exporting.',
+
+  ' 个零件未匹配到配色。请手动关联零件，或勾选确认后再导出。':
+    ' parts have no matching colors. Link them by hand, or tick the confirmation to export anyway.',
+
+  自定义: 'Custom',
+  电影: 'Cinema',
+  打光方式: 'Lamp setup',
+  动作: 'Actions',
+  让它动起来: 'Make it move',
+  '停止动作（当前：': 'Stop the action (now: ',
+  '）': ')',
+  零件展开时不播放动作: 'No motion while parts are exploded',
+  '零件展开时不播放动作，收起后再试': 'Parts are exploded — collapse them to play an action',
+  '循环播放（默认）': 'Play the loop (default)',
+  循环播放全部动作: 'Playing the full action loop',
+  '动作：': 'Action: ',
+  走路: 'Walk',
+  摇头: 'Head shake',
+  张嘴: 'Beak',
+  循环播放: 'the loop',
+  '电影布光 · 外观预览': 'Film lighting · Appearance preview',
+  默认: 'Default',
+  蝴蝶光: 'Butterfly',
+  伦勃朗: 'Rembrandt',
+  分割光: 'Split',
+  轮廓光: 'Rim',
+  '低角度橙色暖光配暖米色背景：阴影被拉长，明暗对比更强。':
+    'A low amber lamp on a warm sand backdrop: longer shadows and stronger contrast.',
+  '纯黑场景只留布光，像拍人像一样给模型打光。':
+    'A pure black stage lit by the lamps alone, like lighting a portrait.',
+  '蝴蝶光：主光从正面偏高处打下，正面干净、轮廓对称。':
+    'Butterfly: the key comes from high and straight ahead, for a clean, symmetrical face.',
+  '伦勃朗光：主光在斜上方 45°，暗面留下三角形光斑。':
+    'Rembrandt: the key sits 45° to the side and above, leaving a triangle of light on the shadow side.',
+  '分割光：硬侧光把模型劈成明暗两半，戏剧感最强。':
+    'Split: a hard side light cuts the model into lit and shadow halves, the most dramatic setup.',
+  '轮廓光：主光从背后勾亮边缘，正面只留一点补光。':
+    'Rim: the key lights the edges from behind, with only a faint fill at the front.',
+  '跟随当前灯光的默认布光。': 'Keeps the lamp placement of the current preset.',
+  未知的打光方式: 'Unknown lighting setup',
+  '例如 ': 'For example ',
+  '你可以在下方手动关联，不改也能直接导出。':
+    ' Link them below if you want; exporting works either way.',
 };
 const keys = Object.keys(english).sort((a, b) => b.length - a.length);
 const pattern = new RegExp(

@@ -6,7 +6,7 @@ This repository has two supported agent workflows: editing looks and developing 
 
 1. Read `public/models/parts.json` (stable instance IDs, source groups, defaults, printability).
 2. Read `public/palette.schema.json` and `docs/agent-api.md`.
-3. Use `npm run -s palette -- new|parts|edit|validate`. Supply colors as #RRGGBB, materials as `pla`, `matte-pla`, `petg`, `matte-petg`, `metallic-petg`, `pla-cf`, `tpu`.
+3. Use `npm run -s palette -- new|parts|edit|validate`. Supply colors as #RRGGBB, materials as `pla`, `matte-pla`, `silk-pla`, `pla-cf`, `petg`, `matte-petg`, `metallic-petg`, `petg-cf`, `abs`, `asa`, `pc`, `pa`, `pa-cf`, `tpu`.
 4. Changes to colors, materials, lighting or layer shading belong in the palette JSON, not in the geometry.
 5. Validate before import. Verify the look visually when appearance matters. Export a complete palette to make your result reproducible.
 
@@ -16,6 +16,7 @@ The browser exposes `window.colorStudio` after `colorstudio:ready`. Its mutation
 
 - `src/domain.ts`: pure model-independent state, validation and undo/redo. No DOM/Three.js/model-name checks.
 - `src/viewer.ts`: model-independent rendering. Never match Microduck part names here.
+- `src/motion.ts`: model-independent walk/idle motions as joint angles. `src/models/active.ts` maps each joint to the servo that drives it; `src/viewer.ts` measures those servo horns and never invents a pivot.
 - `src/models/`: application/model adapter configuration.
 - `public/models/`: GLB plus declarative manifest. Stable IDs must match GLB mesh node names one-to-one.
 - `src/main.ts`: human UI and explicit agent API, both mutate the shared domain state.

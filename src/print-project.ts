@@ -5,15 +5,122 @@ import { isColor, MATERIALS, type Manifest, type Palette, type Finish } from './
 
 type Vec = [number, number, number];
 type Mesh = { vertices: Vec[]; triangles: Vec[] };
+export type PartMatch = {
+  partId: string;
+  /** 0–1 name similarity between the build object and this part. */
+  confidence: number;
+  /** Another candidate scored within 5 points, so the winner is not safe to apply silently. */
+  ambiguous: boolean;
+};
 export type PrintObject = Mesh & {
   id: string;
   name: string;
   size: Vec;
   printable: boolean;
-  suggestedPartIds: string[];
+  /** Best candidates, strongest first. Empty when nothing looks like this part. */
+  matches: PartMatch[];
   originalColor: string;
   originalMaterial: Finish['material'];
 };
+/** At or above this confidence a match is applied without asking. */
+export const MATCH_ACCEPT = 0.8;
+/** Below this confidence the object counts as unmatched and needs a human decision. */
+export const MATCH_FLOOR = 0.5;
+const MATCH_MARGIN = 0.05;
+/**
+ * What a build object still needs from the user:
+ * `auto` applies silently, `confirm` shows the best guess and asks for one confirmation,
+ * `choose` has no acceptable guess and needs the part to be picked deliberately.
+ */
+export type MatchAction = 'auto' | 'confirm' | 'choose';
+export function matchAction(
+  confidence: number | null,
+  { linked, chosen, contested = false }: { linked: boolean; chosen: boolean; contested?: boolean },
+): MatchAction {
+  if (chosen) return 'auto'; // the user already decided this row
+  if (!linked) return 'choose'; // nothing reached MATCH_FLOOR
+  // Below MATCH_ACCEPT, or a second candidate is within a few points: a human looks at it.
+  if (confidence === null || contested) return 'confirm';
+  return confidence >= MATCH_ACCEPT ? 'auto' : 'confirm';
+}
+/** Same name but one exchanged word (left/right, v1/v2, A/B): never auto-matched. */
+const VARIANT_CEILING = 0.45;
+const normalizeCache = new Map<string, string>();
+const NAME_EXT = /\.(stl|3mf|obj|step|stp|ply|glb|gltf|iges|igs)$/;
+const normalizeName = (value: string) => {
+  const hit = normalizeCache.get(value);
+  if (hit !== undefined) return hit;
+  const clean = value
+    .toLowerCase()
+    .replace(NAME_EXT, '')
+    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, ' ')
+    .trim();
+  if (normalizeCache.size > 4096) normalizeCache.clear();
+  normalizeCache.set(value, clean);
+  return clean;
+};
+/** Latin words stay whole; CJK characters become one token each so partial names still match. */
+const tokenize = (value: string) => normalizeName(value).match(/[a-z0-9]+|[\u4e00-\u9fff]/g) || [];
+const bigrams = (value: string) => {
+  const text = normalizeName(value).replace(/ /g, '');
+  const set = new Set<string>();
+  if (!text) return set;
+  if (text.length === 1) set.add(text);
+  for (let i = 0; i < text.length - 1; i++) set.add(text.slice(i, i + 2));
+  return set;
+};
+const dice = (a: Set<string>, b: Set<string>) => {
+  if (!a.size || !b.size) return 0;
+  let shared = 0;
+  for (const token of a) if (b.has(token)) shared++;
+  return (2 * shared) / (a.size + b.size);
+};
+/**
+ * Similarity of two part names. Tolerates case, separators, file names and index prefixes,
+ * so "ankle_left_v2" still matches "ankle_left" while "left_shell" and "right_shell" do not.
+ */
+export function nameSimilarity(left: string, right: string): number {
+  const a = normalizeName(left),
+    b = normalizeName(right);
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  const A = new Set(tokenize(left)),
+    B = new Set(tokenize(right));
+  const shared = [...A].filter((token) => B.has(token)).length;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  if (A.size && B.size && shared === Math.min(A.size, B.size) && short.length >= 2)
+    // Every token of the shorter name appears in the longer one: added letters still match.
+    return Math.min(1, 0.72 + 0.28 * (short.length / long.length));
+  // "upper_leg_left" vs "upper_leg_right" differs by one word while sharing a long prefix.
+  // Character overlap would read that as a match, so variants stay below the floor.
+  if (shared === Math.min(A.size, B.size) - 1) return Math.min(VARIANT_CEILING, 0.8 * dice(A, B));
+  return 0.8 * Math.max(dice(A, B), dice(bigrams(a), bigrams(b)));
+}
+/** Rank printable parts for a build object. Never invents a candidate out of nothing. */
+export function matchPrintObject(name: string, model: Manifest, limit = 3): PartMatch[] {
+  const ranked = model.parts
+    .filter((p) => p.printable)
+    .map((p) => ({
+      partId: p.id,
+      confidence: Math.max(
+        nameSimilarity(name, p.sourceName),
+        nameSimilarity(name, p.id),
+        nameSimilarity(name, p.name),
+      ),
+    }))
+    .filter((m) => m.confidence > 0.15)
+    .sort((a, b) => b.confidence - a.confidence || a.partId.localeCompare(b.partId))
+    .slice(0, Math.max(1, limit));
+  const best = ranked[0];
+  const runnerUp = ranked[1]?.confidence ?? -1;
+  // Contested: a second candidate sits within the margin of the winner. Only then does the
+  // winner need a human, and only candidates that close to it are called alternatives.
+  const contested = ranked.length > 1 && best.confidence - runnerUp < MATCH_MARGIN;
+  return ranked.map((m) => ({
+    ...m,
+    ambiguous: contested && best.confidence - m.confidence < MATCH_MARGIN,
+  }));
+}
 export type PrintProject = {
   name: string;
   objects: PrintObject[];
@@ -235,15 +342,6 @@ export function readPrintProject(bytes: Uint8Array, name: string, model: Manifes
       throw new Error('Invalid print dimensions: ' + objectName);
     // Keep the source printing rotation and scale, only translate each item onto Z=0.
     mesh.vertices = mesh.vertices.map((v) => v.map((n, k) => n - min[k]) as Vec);
-    const suggestedPartIds = model.parts
-      .filter(
-        (p) =>
-          p.printable &&
-          (objectName === p.sourceName ||
-            objectName.startsWith(p.sourceName + '_') ||
-            objectName.startsWith(p.sourceName + '.')),
-      )
-      .map((p) => p.id);
     const slot = Number((settings && metadata(settings, 'extruder')) || 1) - 1;
     const sourceSettings = files['Metadata/project_settings.config']
       ? JSON.parse(strFromU8(files['Metadata/project_settings.config']))
@@ -268,7 +366,7 @@ export function readPrintProject(bytes: Uint8Array, name: string, model: Manifes
       name: objectName,
       size,
       printable: item.getAttribute('printable') !== '0',
-      suggestedPartIds,
+      matches: matchPrintObject(objectName, model),
       originalColor: isColor(originalColor) ? originalColor : '#F1EFE7',
       originalMaterial,
     };
@@ -391,6 +489,22 @@ export function planPrint(
     excluded,
   };
 }
+const FILAMENT_TYPES: Record<Finish['material'], string> = {
+  pla: 'PLA',
+  'matte-pla': 'PLA',
+  'silk-pla': 'PLA',
+  'pla-cf': 'PLA-CF',
+  petg: 'PETG',
+  'matte-petg': 'PETG',
+  'metallic-petg': 'PETG',
+  'petg-cf': 'PETG-CF',
+  abs: 'ABS',
+  asa: 'ASA',
+  pc: 'PC',
+  pa: 'PA',
+  'pa-cf': 'PA-CF',
+  tpu: 'TPU',
+};
 const escapeXML = (s: string) =>
   s.replace(
     /[&<>"']/g,
@@ -453,8 +567,8 @@ function project3mf(plan: PrintPlan, project: PrintProject): Uint8Array {
     );
   }
   const model = `<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" xml:lang="en-US" xmlns="${CORE}" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021"><metadata name="Application">BambuStudio-02.06.00.51</metadata><metadata name="Description">Exported by Microduck Color Studio in Bambu-compatible multi-plate format.</metadata><metadata name="BambuStudio:3mfVersion">1</metadata><resources><basematerials id="1">${materials.map((m) => `<base name="${m.material}" displaycolor="${m.color}FF"/>`).join('')}</basematerials>${objects.join('')}</resources><build>${builds.join('')}</build></model>`;
-  const baseType = (m: Finish['material']) =>
-    m.includes('petg') ? 'PETG' : m === 'tpu' ? 'TPU' : m === 'pla-cf' ? 'PLA-CF' : 'PLA';
+  // Filament types Bambu Studio / OrcaSlicer understand; appearance slugs never leak into profiles.
+  const baseType = (m: Finish['material']) => FILAMENT_TYPES[m];
   const printer = printerById(plan.options.printerId);
   const config = {
     printer_model: printer?.name || 'Custom',

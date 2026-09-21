@@ -28,12 +28,24 @@
             "enum": [
               "pla",
               "matte-pla",
+              "silk-pla",
+              "pla-cf",
               "petg",
               "matte-petg",
               "metallic-petg",
-              "pla-cf",
+              "petg-cf",
+              "abs",
+              "asa",
+              "pc",
+              "pa",
+              "pa-cf",
               "tpu"
             ]
+          },
+          "stockId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,80}$",
+            "description": "ID of an item in the local filament inventory. While set, the part follows that spool's color and material."
           },
           "coating": {
             "type": "object",
@@ -67,7 +79,8 @@
           "enum": [
             "studio",
             "daylight",
-            "warm"
+            "warm",
+            "cinema"
           ]
         },
         "intensity": {
@@ -79,6 +92,15 @@
           "type": "number",
           "minimum": -180,
           "maximum": 180
+        },
+        "pattern": {
+          "enum": [
+            "butterfly",
+            "rembrandt",
+            "split",
+            "rim"
+          ],
+          "description": "Lamp setup for the cinema stage. Omit for the preset's own placement."
         }
       },
       "required": [

@@ -16,6 +16,10 @@
 * {
   box-sizing: border-box;
 }
+/* An author `display` rule beats the UA rule for [hidden], which silently un-hides panels. */
+[hidden] {
+  display: none !important;
+}
 body {
   margin: 0;
 }
@@ -1868,7 +1872,7 @@ html[lang='en'] .reference-heading {
 }
 .print-plan-preview {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15px;
 }
 .print-plate {
@@ -1892,7 +1896,8 @@ html[lang='en'] .reference-heading {
 }
 .print-plate svg {
   width: 100%;
-  max-height: 240px;
+  height: auto;
+  max-height: none;
 }
 .print-plate ol {
   font-size: 10px;
@@ -1979,4 +1984,451 @@ html[lang='en'] .reference-heading {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* Saved looks: save the current colors and switch between them from the top bar. */
+.looks-split {
+  position: relative;
+  display: inline-flex;
+}
+/* Two lines in the same box height as the neighbouring buttons: fixed title, current look below. */
+.looks-toggle {
+  gap: 8px;
+  padding: 5px 12px 5px 15px;
+}
+.looks-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+.looks-title {
+  font-size: 12px;
+  line-height: 1;
+}
+.looks-toggle svg {
+  width: 13px;
+  height: 13px;
+  opacity: 0.65;
+}
+.looks-label {
+  display: block;
+  max-width: 104px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1;
+  color: #84938a;
+}
+#looks-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(560px, calc(100vh - 140px));
+  overflow: auto;
+  z-index: 70;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px #12342a26;
+}
+.looks-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.looks-head h3 {
+  margin: 5px 0 0;
+  font-size: 15px;
+}
+.looks-save {
+  display: flex;
+  gap: 8px;
+  margin: 15px 0 4px;
+}
+.looks-save input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  background: #fff;
+  color: var(--ink);
+}
+.looks-save .button {
+  padding: 9px 12px;
+  font-size: 11px;
+}
+#looks-hint {
+  margin-top: 9px;
+}
+.looks-list {
+  margin-top: 12px;
+}
+.looks-empty {
+  padding: 22px 6px;
+  font-size: 11px;
+  line-height: 2;
+  text-align: center;
+  color: #8d998f;
+}
+.look-row {
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.look-row.active {
+  border-color: #6f9f79;
+  background: #f2f8f1;
+}
+.look-apply {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 4px;
+  border-radius: 7px;
+  text-align: left;
+}
+.look-apply:hover {
+  background: #eef4ec;
+}
+.look-strip {
+  display: flex;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid #00000012;
+  border-radius: 5px;
+}
+.look-strip span {
+  display: block;
+  width: 13px;
+  height: 26px;
+}
+.look-meta {
+  flex: 1;
+  min-width: 0;
+}
+.look-meta b {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.look-meta small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  color: #8d998f;
+}
+.look-rename {
+  width: 100%;
+  padding: 3px 6px;
+  font-size: 12px;
+  border: 1px solid #6f9f79;
+  border-radius: 5px;
+}
+.look-state {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #93a09a;
+}
+.look-row.active .look-state {
+  color: var(--accent);
+  font-weight: 500;
+}
+.look-tools {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+}
+.look-tools button {
+  flex: 1;
+  padding: 6px 4px;
+  font-size: 10px;
+  color: #6b7d72;
+  background: #fbfcf8;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.look-tools button:hover {
+  background: #eef4ec;
+  color: var(--ink);
+}
+.look-tools button.confirm {
+  color: #a83d31;
+  background: #fdecea;
+  border-color: #e0a49b;
+  font-weight: 500;
+}
+
+/* Filament links: parts bound to "my filaments" follow that spool. */
+.part-row small.linked {
+  color: #3d8a6d;
+}
+.part-row small + small {
+  margin-left: 6px;
+}
+.stock-match .text-button {
+  margin-left: 6px;
+  font-size: 9px;
+  text-decoration: underline;
+}
+
+.light-note {
+  margin-top: 10px;
+}
+
+/* Print matching: a red asterisk marks objects that need a human decision. */
+.print-object.needs-review {
+  background: #fdf4f2;
+}
+.print-asterisk {
+  color: #c0392b;
+  font-weight: 700;
+  margin-right: 3px;
+}
+.print-hint-blocked {
+  color: #a83d31;
+}
+.print-match-warning {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fdf1ef;
+  border: 1px solid #e6b3aa;
+  border-radius: 10px;
+}
+.print-match-warning > b {
+  color: #c0392b;
+  font-size: 18px;
+  line-height: 1.1;
+}
+.print-match-warning p {
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #8f3a2c;
+}
+.print-match-warning .check-row {
+  margin-top: 4px;
+  color: #8f3a2c;
+}
+
+/* My filaments: rows show which parts follow that spool. */
+.stock-row .stock-linked {
+  display: block;
+  margin-top: 4px;
+  font-size: 9px;
+  color: #3d8a6d;
+}
+
+/* Material swatches: one glanceable dot per filament family. */
+.material-options button[data-material='silk-pla']:before {
+  background: linear-gradient(115deg, #e6ebdd 5%, #ffffff 40%, #9cb2a3 60%, #f4f6ef);
+}
+.material-options button[data-material='pla-cf']:before {
+  background: #3f4642;
+}
+.material-options button[data-material='petg-cf']:before {
+  background: #4a504c;
+}
+.material-options button[data-material='metallic-petg']:before {
+  background: linear-gradient(110deg, #8f9a95 10%, #f2f4f2 45%, #69746f 60%, #cdd4d1);
+}
+.material-options button[data-material='abs']:before {
+  background: #b9bfb5;
+}
+.material-options button[data-material='asa']:before {
+  background: #a8afa5;
+}
+.material-options button[data-material='pc']:before {
+  background: linear-gradient(120deg, #dfe6e2, #8fa39a);
+}
+.material-options button[data-material='pa']:before {
+  background: #cfd3c8;
+}
+.material-options button[data-material='pa-cf']:before {
+  background: #33383a;
+}
+
+/* Custom white balance: the track previews the 2000–10000 K range it sweeps. */
+#temperature {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  margin: 12px 0 16px;
+  background: linear-gradient(90deg, #ff9a3c, #ffd7a8 26%, #fff6ec 50%, #dbe9ff 74%, #a9c6ff);
+}
+#temperature::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #a9b6ad;
+  box-shadow: 0 1px 3px #00000026;
+}
+#temperature::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #a9b6ad;
+}
+#pattern-row {
+  margin-bottom: 2px;
+}
+.light-options {
+  flex-wrap: wrap;
+}
+
+/* Print matching: red means "pick a part", amber means "check and confirm". */
+.print-object.needs-check {
+  background: #fdf8ef;
+}
+.print-asterisk.check {
+  color: #b07a1e;
+}
+.print-hint-check {
+  color: #96641a;
+}
+.print-match-warning > b:after {
+  content: '';
+}
+.pattern-heading {
+  margin-top: 16px;
+}
+
+/* Cinema lights the model on a black stage: overlays become translucent glass on dark. */
+.stage.dark-stage .eyebrow,
+.stage.dark-stage h1,
+.stage.dark-stage .model-label,
+.stage.dark-stage .gesture,
+.stage.dark-stage .stage-caption,
+.stage.dark-stage #loading {
+  color: #eaece7;
+}
+.stage.dark-stage .eyebrow,
+.stage.dark-stage .model-label,
+.stage.dark-stage .gesture,
+.stage.dark-stage .stage-caption {
+  opacity: 0.6;
+}
+.stage.dark-stage .live-tag,
+.stage.dark-stage .stage-tools,
+.stage.dark-stage .view-controls {
+  background: #ffffff14;
+  border-color: #ffffff1f;
+  backdrop-filter: blur(7px);
+  box-shadow: 0 3px 18px #0000004d;
+}
+.stage.dark-stage .live-tag,
+.stage.dark-stage .icon-button {
+  color: #eaece7;
+}
+.stage.dark-stage .live-tag b {
+  background: #7fd6b4;
+}
+.stage.dark-stage .stage-tools > span {
+  background: #ffffff26;
+}
+.stage.dark-stage .icon-button:hover {
+  background: #ffffff1f;
+}
+.stage.dark-stage .view-controls button {
+  color: #b6c0b6;
+}
+.stage.dark-stage .view-controls .active {
+  background: #ffffff26;
+  color: #ffffff;
+  box-shadow: none;
+}
+.stage.dark-stage .slogan-row .icon-button {
+  color: #c8d0c6;
+}
+
+/* Action button: plays the walk loop, with a hover menu for a single motion. */
+.motion-tools {
+  position: relative;
+  display: flex;
+}
+#motion-toggle.active {
+  background: #e2efe6;
+  color: var(--accent);
+}
+#motion-menu {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: -6px;
+  z-index: 40;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+  width: 168px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px #12342a22;
+}
+#motion-menu.closing {
+  opacity: 0;
+  transform: translateX(6px);
+  pointer-events: none;
+}
+#motion-menu .eyebrow {
+  display: block;
+  padding: 4px 8px 6px;
+}
+#motion-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  text-align: left;
+  color: var(--ink);
+}
+#motion-menu button:hover,
+#motion-menu button:focus-visible {
+  background: #e6f0e8;
+}
+#motion-menu button.active {
+  background: #e2efe6;
+  color: var(--accent);
+  font-weight: 500;
+}
+.stage.dark-stage #motion-menu {
+  background: #12171a;
+  border-color: #ffffff26;
+  box-shadow: 0 12px 30px #000000a6;
+}
+.stage.dark-stage #motion-menu button {
+  color: #e6eae4;
+}
+.stage.dark-stage #motion-menu button:hover,
+.stage.dark-stage #motion-menu button:focus-visible {
+  background: #ffffff1f;
+}
+.stage.dark-stage #motion-menu button.active {
+  background: #ffffff26;
+  color: #ffffff;
+}
+.stage.dark-stage #motion-toggle.active {
+  background: #ffffff26;
+  color: #ffffff;
 }
