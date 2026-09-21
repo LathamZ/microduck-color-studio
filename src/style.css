@@ -2432,3 +2432,20 @@ html[lang='en'] .reference-heading {
   background: #ffffff26;
   color: #ffffff;
 }
+
+/* Light legend: which arrow is which lamp, matching how the gizmo draws them. */
+.light-legend b {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin: 0 3px -1px 5px;
+  border: 1px solid #143b33;
+}
+.light-legend b.key-dot {
+  background: #ffffff;
+}
+.light-legend b.fill-dot {
+  background: #ffffff99;
+  border-color: #143b3380;
+}

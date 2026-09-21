@@ -4,13 +4,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import type {
-  LightPattern,
-  LightPreset,
-  Lighting,
-  Manifest,
-  MaterialKind,
-  Palette,
+import {
+  ELEVATION_RANGE,
+  type LightPattern,
+  type LightPreset,
+  type Lighting,
+  type Manifest,
+  type MaterialKind,
+  type Palette,
 } from './domain';
 import {
   BLEND_SECONDS,
@@ -146,6 +147,8 @@ export const materialPresets: Record<MaterialKind, MaterialPreset> = {
     sheenRoughness: 0.65,
   },
 };
+/** Horizontal distance every lamp orbits the model at, in scene units. */
+export const LAMP_RADIUS = 420;
 export type Lamp = {
   color: string;
   intensity: number;
@@ -266,11 +269,22 @@ export const LIGHT_PATTERNS: Record<
 /** Resolve the stored lighting into the concrete rig the renderer applies. */
 export function resolveRig(lighting: Lighting): LightRig {
   const base = LIGHT_RIGS[lighting.preset] || LIGHT_RIGS.studio;
+  // The angle control tilts the whole rig: every lamp keeps its own bearing, and the height
+  // each one sits at is scaled so the key lands on the requested angle above the horizon.
+  const tilted = () => {
+    if (lighting.elevation === undefined) return base;
+    const angle = Math.min(ELEVATION_RANGE.max, Math.max(ELEVATION_RANGE.min, lighting.elevation));
+    const from = Math.atan2(base.key.height, LAMP_RADIUS);
+    const scale = Math.tan((angle * Math.PI) / 180) / Math.tan(from);
+    if (!Number.isFinite(scale)) return base;
+    const til = (lamp: Lamp): Lamp => ({ ...lamp, height: Math.max(20, lamp.height * scale) });
+    return { ...base, key: til(base.key), fill: til(base.fill), rim: til(base.rim) };
+  };
   // A lamp setup re-aims the cinema stage only; the studio presets keep their own placement.
   const pattern =
     lighting.preset === 'cinema' && lighting.pattern ? LIGHT_PATTERNS[lighting.pattern] : null;
-  if (!pattern) return base;
-  return {
+  if (!pattern) return tilted();
+  const placed = {
     ...base,
     key: { ...base.key, height: pattern.key.height, azimuth: pattern.key.azimuth },
     fill: {
@@ -286,6 +300,19 @@ export function resolveRig(lighting: Lighting): LightRig {
       intensity: base.key.intensity * pattern.rim.ratio,
     },
   };
+  return lighting.elevation === undefined
+    ? placed
+    : (() => {
+        const angle = Math.min(
+          ELEVATION_RANGE.max,
+          Math.max(ELEVATION_RANGE.min, lighting.elevation),
+        );
+        const from = Math.atan2(placed.key.height, LAMP_RADIUS);
+        const scale = Math.tan((angle * Math.PI) / 180) / Math.tan(from);
+        if (!Number.isFinite(scale)) return placed;
+        const til = (lamp: Lamp): Lamp => ({ ...lamp, height: Math.max(20, lamp.height * scale) });
+        return { ...placed, key: til(placed.key), fill: til(placed.fill), rim: til(placed.rim) };
+      })();
 }
 type Joint = {
   /** Horn of the driving servo: the axis the joint turns about, and a point on it. */
@@ -358,6 +385,17 @@ export class Viewer {
   private jointOrder: JointName[] = [];
   /** Measured leg linkage per side, used to solve the walk instead of guessing angles. */
   private legs: { L: LegGeometry; R: LegGeometry } | null = null;
+  /** Light direction gizmo: a sphere around the model with one arrow per lit lamp. */
+  private lightHint!: THREE.Group;
+  private lightHintArrows: THREE.Group[] = [];
+  private lightHintRadius = 160;
+  private lightHintCenter = new THREE.Vector3();
+  private lightHintLevel = 0;
+  private lightHintTarget = 0;
+  private lightHintAngle = 0;
+  private lightHintAzimuth = 0;
+  private lastLighting: Lighting | null = null;
+  private lastRig: LightRig | null = null;
   private explodeValue = 0;
   private motion: MotionName | 'sequence' | null = null;
   private motionClock = 0;
@@ -426,6 +464,9 @@ export class Viewer {
     this.scene.add(this.key);
     this.fill = new THREE.DirectionalLight('#d7e6ff', 1.1);
     this.fill.position.set(220, 160, -240);
+    // The fill is deliberately shadowless: on a set it is a broad soft source that lifts the
+    // shadow side rather than adding a second shadow. The floor is one ShadowMaterial with a
+    // single opacity, so a second caster would read exactly as dark as the key.
     this.scene.add(this.fill);
     this.rim = new THREE.DirectionalLight('#ffffff', 0);
     this.rim.position.set(0, 420, -460);
@@ -495,6 +536,7 @@ export class Viewer {
       const delta = this.lastFrame ? (now - this.lastFrame) / 1000 : 0;
       this.lastFrame = now;
       const step = Math.min(delta, 0.1);
+      this.updateLightHint(step);
       if (this.motion) {
         this.motionClock += step;
         const target = poseAt(this.motionClock, this.motion, this.legs || undefined);
@@ -549,6 +591,7 @@ export class Viewer {
     if (this.meshes.size !== known.size) throw new Error('几何与零件清单不一致');
     this.group.add(gltf.scene);
     this.buildRig();
+    this.buildLightHint();
     const bounds = new THREE.Box3().setFromObject(this.group);
     bounds.getCenter(this.center);
     this.size = bounds.getSize(new THREE.Vector3()).length();
@@ -589,7 +632,7 @@ export class Viewer {
           )
           .replace(
             '#include <roughnessmap_fragment>',
-            '#include <roughnessmap_fragment>\nfloat phase = vLayerWorld.y * 31.4159265; float attenuation = 1.0-smoothstep(0.7, 3.0, fwidth(phase)); float ridges = sin(phase)*attenuation; diffuseColor.rgb *= 1.0 - layerEnabled * 0.035 * (ridges*0.5+0.5); roughnessFactor = clamp(roughnessFactor + layerEnabled * 0.05 * ridges, 0.04, 1.0);',
+            '#include <roughnessmap_fragment>\nfloat phase = vLayerWorld.y * 15.7079633; float attenuation = 1.0-smoothstep(0.7, 3.0, fwidth(phase)); float ridges = sin(phase)*attenuation; diffuseColor.rgb *= 1.0 - layerEnabled * 0.075 * (ridges*0.5+0.5); roughnessFactor = clamp(roughnessFactor + layerEnabled * 0.09 * ridges, 0.04, 1.0);',
           );
       };
       mat.customProgramCacheKey = () => `${layers && part.printable}`;
@@ -718,6 +761,7 @@ export class Viewer {
     }
     // Exploding and animating both move parts; the spread is reapplied on top of the rest pose.
     if (this.explodeValue) this.applyExplode();
+    if (this.lightHint) this.lightHint.position.y = this.groundMesh.position.y + 2;
   }
   private applyPose(pose: Pose) {
     const world = new Map<JointName, THREE.Matrix4>();
@@ -758,6 +802,147 @@ export class Viewer {
       else matrix.copy(rest);
       matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
     }
+  }
+  /**
+   * A ring on the floor with an arrow pointing at the model from where the key lamp stands,
+   * drawn in the same accent as the selection box. Hidden until the direction is adjusted.
+   */
+  /**
+   * One arrow per lit lamp, sitting exactly where that lamp stands and pointing at the middle
+   * of the duck. Size carries the lamp's strength and the key is drawn solid, because the key
+   * is the lamp that casts the shadow; fill and rim are smaller and softer, exactly as they
+   * are used on a set. Every preset lights a key and a fill, cinema adds its rim.
+   */
+  private buildLightHint() {
+    this.lightHint?.removeFromParent();
+    const box = new THREE.Box3().setFromObject(this.group);
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    this.lightHintCenter.copy(sphere.center);
+    this.lightHintRadius = sphere.radius * 1.3;
+    const group = new THREE.Group();
+    group.position.copy(this.lightHintCenter);
+    // White shapes with a dark rim, so the gizmo reads on a studio backdrop and on the
+    // black cinema stage alike. The rim is a slightly larger back-face shell.
+    const white = (opacity: number) =>
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity,
+        depthWrite: false,
+      });
+    const rim = () =>
+      new THREE.MeshBasicMaterial({
+        color: 0x143b33,
+        side: THREE.BackSide,
+        transparent: true,
+        depthWrite: false,
+      });
+    const outlined = (geometry: THREE.BufferGeometry, grow: number) => {
+      const holder = new THREE.Group();
+      const edge = new THREE.Mesh(geometry, rim());
+      edge.scale.setScalar(grow);
+      edge.renderOrder = 3;
+      const face = new THREE.Mesh(geometry, white(0));
+      face.renderOrder = 4;
+      holder.add(edge, face);
+      return holder;
+    };
+    // A chunky, rounded arrow: cone head, capsule shaft and a ball at the tail.
+    const arrow = () => {
+      const holder = new THREE.Group();
+      const head = outlined(new THREE.ConeGeometry(14, 32, 32), 1.08);
+      head.rotation.x = Math.PI / 2;
+      head.position.set(0, 0, 28);
+      const shaft = outlined(new THREE.CapsuleGeometry(5.2, 26, 8, 20), 1.07);
+      shaft.rotation.x = Math.PI / 2;
+      shaft.position.set(0, 0, -6);
+      const tail = outlined(new THREE.SphereGeometry(5.8, 20, 14), 1.08);
+      tail.position.set(0, 0, -24);
+      holder.add(head, shaft, tail);
+      return holder;
+    };
+    // Key first: it is the lamp the direction control aims.
+    this.lightHintArrows = [arrow(), arrow(), arrow()];
+    for (const a of this.lightHintArrows) group.add(a);
+    group.visible = false;
+    group.renderOrder = 2;
+    this.lightHint = group;
+    this.scene.add(group);
+  }
+  /**
+   * Aim the gizmo at an azimuth, or pass null to fade it away. Values are the same degrees
+   * as the light direction control; each arrow then takes its own lamp's angle and height
+   * straight from the applied rig, so the arrows show where the lights really are.
+   */
+  showLightHint(azimuth: number | null) {
+    if (azimuth === null) {
+      this.lightHintTarget = 0;
+      return;
+    }
+    this.lightHintAzimuth = azimuth;
+    this.lightHintTarget = 1;
+    // Re-centre on the model each time, so an exploded or isolated view stays honest.
+    const box = new THREE.Box3().setFromObject(this.group);
+    if (!box.isEmpty()) {
+      const sphere = box.getBoundingSphere(new THREE.Sphere());
+      this.lightHintCenter.copy(sphere.center);
+      this.lightHint.position.copy(this.lightHintCenter);
+      this.lightHintRadius = sphere.radius * 1.3;
+    }
+  }
+  updateLightHint(delta: number) {
+    if (!this.lightHint) return;
+    this.lightHintLevel += (this.lightHintTarget - this.lightHintLevel) * Math.min(1, delta * 6);
+    if (this.lightHintLevel < 0.005 && this.lightHintTarget === 0) {
+      this.lightHintLevel = 0;
+      this.lightHint.visible = false;
+      return;
+    }
+    this.lightHint.visible = true;
+    // Glide to the new azimuth along the shortest way round, so dragging feels continuous.
+    const glide = Math.min(1, delta * 9);
+    const gap = ((this.lightHintAzimuth - this.lightHintAngle + 540) % 360) - 180;
+    this.lightHintAngle += gap * glide;
+    const fade = this.lightHintLevel;
+    // One arrow per lamp that is contributing light, sized by how strong that lamp is.
+    const lamps: { height: number; azimuth: number; weight: number }[] = [];
+    if (this.lastRig && this.lastLighting) {
+      const global = this.lastLighting.intensity;
+      for (const lamp of [this.lastRig.key, this.lastRig.fill, this.lastRig.rim]) {
+        const strength = lamp.intensity * global;
+        if (strength > 0.12)
+          lamps.push({ height: lamp.height, azimuth: lamp.azimuth, weight: strength });
+      }
+    }
+    const strongest = Math.max(0.001, ...lamps.map((l) => l.weight));
+    this.lightHintArrows.forEach((holder, index) => {
+      const lamp = lamps[index];
+      holder.visible = !!lamp;
+      if (!lamp) return;
+      // The strongest lamp gets the biggest arrow, so size reads as brightness.
+      holder.scale.setScalar(0.58 + 0.52 * Math.min(1, lamp.weight / strongest));
+      // The key is drawn solid because it is the lamp that casts the shadow; fill and rim
+      // stay softer, which is also how they are used on a real set.
+      const strength = index === 0 ? 1 : 0.5;
+      for (const part of holder.children) {
+        const sides = (part as THREE.Group).children;
+        (sides[0] as THREE.Mesh).material &&
+          (((sides[0] as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity =
+            fade * strength);
+        (sides[1] as THREE.Mesh).material &&
+          (((sides[1] as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity =
+            fade * strength);
+      }
+      // Exactly where that lamp stands: its own azimuth offset and real height.
+      const elevation = Math.atan2(lamp.height, LAMP_RADIUS);
+      const a = ((this.lightHintAngle + lamp.azimuth) * Math.PI) / 180;
+      holder.position.set(
+        Math.sin(a) * Math.cos(elevation) * this.lightHintRadius,
+        Math.sin(elevation) * this.lightHintRadius,
+        Math.cos(a) * Math.cos(elevation) * this.lightHintRadius,
+      );
+      holder.lookAt(this.lightHint.position);
+    });
   }
   /**
    * The measured joint rig: which servo drives which parts, and where its horn sits. Exposed
@@ -823,6 +1008,7 @@ export class Viewer {
     });
     this.key.shadow.camera.updateProjectionMatrix();
     this.groundMesh.position.y = box.min.y - 0.3;
+    if (this.lightHint) this.lightHint.position.y = this.groundMesh.position.y + 2;
   }
   light(lighting: Lighting) {
     const rig = resolveRig(lighting);
@@ -832,7 +1018,7 @@ export class Viewer {
       lamp.intensity = spec.intensity * intensity;
       // Height and angle are part of the rig: an overhead sun reads unlike a low side lamp.
       const a = ((lighting.azimuth + spec.azimuth) * Math.PI) / 180;
-      lamp.position.set(Math.sin(a) * 420, spec.height, Math.cos(a) * 420);
+      lamp.position.set(Math.sin(a) * LAMP_RADIUS, spec.height, Math.cos(a) * LAMP_RADIUS);
     };
     place(this.key, rig.key);
     place(this.fill, rig.fill);
@@ -845,6 +1031,8 @@ export class Viewer {
     this.renderer.toneMappingExposure = rig.exposure;
     this.renderer.setClearColor(rig.background);
     this.ground.opacity = rig.shadow;
+    this.lastLighting = lighting;
+    this.lastRig = rig;
   }
   orbit(azimuth: number, elevation: number) {
     const d = this.camera.position.distanceTo(this.controls.target);

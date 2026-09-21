@@ -42,6 +42,8 @@ export const english: Record<string, string> = {
   '未匹配，请独立设置或关联部件': 'Unmatched — set a finish or link a part',
   打印颜色: 'Print color',
   预览分盘: 'Preview plates',
+  收起预览: 'Hide preview',
+  '已收起分盘预览。': 'Plate preview hidden.',
   下载打印包: 'Download print package',
   分盘俯视图: 'Plate top view',
   '一个 3MF 项目保留所有盘的颜色和排布，附逐件 STL 与 JSON 清单。切片工艺、支撑涂色和 G-code 不随包导出；请在切片软件中重新设置。丙烯涂色记为后处理，按底材颜色分盘。':
@@ -127,12 +129,18 @@ export const english: Record<string, string> = {
   单独查看: 'Isolate',
   还原: 'Restore',
   灯光与表面: 'Light & surface',
-  光线强度: 'Light intensity',
+  光源强度: 'Light intensity',
+  光源角度: 'Light angle',
+  '调整光源时出现箭头，指向灯的位置：':
+    'Arrows appear while you adjust the lights, pointing at each lamp: ',
+  '大箭头是主光，负责投影；': 'the large one is the key that casts the shadow, ',
+  '小箭头是补光与轮廓光，本身不投影。': 'the small ones are fill and rim, which cast no shadow.',
+  '光源角度须为 5–85 度': 'Light angle must be between 5 and 85 degrees',
   光源方向: 'Light direction',
   摄影棚: 'Studio',
   日光: 'Daylight',
   暖光: 'Warm',
-  '模拟 0.2 mm 打印层纹': 'Simulate 0.2 mm layer lines',
+  '模拟 0.4 mm 打印层纹': 'Simulate 0.4 mm layer lines',
   '光泽与层纹为近似模拟，非耗材实测；层纹按装配竖直方向展示。':
     'Approximate gloss and layers, not filament measurements. Layers follow the assembly vertical axis.',
   '原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。':

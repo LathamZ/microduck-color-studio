@@ -281,3 +281,36 @@ describe('walking is solved from the measured linkage', () => {
     }
   });
 });
+
+describe('light angle', () => {
+  it('stores an elevation and keeps it through a round trip', () => {
+    const s = new EditorState(m);
+    const next = structuredClone(s.palette);
+    next.lighting = { preset: 'studio', intensity: 1, azimuth: 0, elevation: 70 };
+    s.commit(next);
+    expect(validatePalette(JSON.parse(JSON.stringify(s.palette)), m).lighting.elevation).toBe(70);
+    s.undo();
+    expect(s.palette.lighting.elevation).toBeUndefined();
+  });
+  it('tilts every lamp of the rig by the stored angle', () => {
+    const flat = resolveRig({ preset: 'studio', intensity: 1, azimuth: 0, elevation: 20 });
+    const high = resolveRig({ preset: 'studio', intensity: 1, azimuth: 0, elevation: 75 });
+    expect(high.key.height).toBeGreaterThan(flat.key.height);
+    expect(high.fill.height).toBeGreaterThan(flat.fill.height);
+    // The key lands on the requested angle above the horizon.
+    const angle = (Math.atan2(high.key.height, 420) * 180) / Math.PI;
+    expect(angle).toBeCloseTo(75, 2);
+  });
+  it('keeps the preset angle when nothing is stored', () => {
+    const plain = resolveRig({ preset: 'warm', intensity: 1, azimuth: 0 });
+    const warm = resolveRig({ preset: 'warm', intensity: 1, azimuth: 0, elevation: undefined });
+    expect(plain.key.height).toBe(warm.key.height);
+  });
+  it('rejects angles outside the useful range', () => {
+    for (const elevation of [0, 4, 86, 200, NaN, 'high']) {
+      const p = defaults(m);
+      p.lighting = { preset: 'studio', intensity: 1, azimuth: 0, elevation: elevation as number };
+      expect(() => validatePalette(p, m)).toThrow();
+    }
+  });
+});

@@ -240,7 +240,7 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
       });
       manualChoices.clear();
       render();
-      $('#print-plan-preview').innerHTML = '';
+      clearPreview();
       return api.getSetup();
     },
     getSetup() {
@@ -288,7 +288,7 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
       options.depth = printer.depth;
       options.height = printer.height;
     }
-    $('#print-plan-preview').innerHTML = '';
+    clearPreview();
     render();
   };
   $<HTMLInputElement>('#print-source').onchange = (event) => {
@@ -324,7 +324,7 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
     if (input.dataset.setting === 'color' && a.finish) a.finish.color = input.value;
     if (input.dataset.setting === 'material' && a.finish)
       a.finish.material = input.value as Finish['material'];
-    $('#print-plan-preview').innerHTML = '';
+    clearPreview();
     render();
   };
   for (const key of ['width', 'depth', 'height', 'margin', 'gap', 'grouping'] as const)
@@ -332,7 +332,7 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
       const value = $<HTMLInputElement>('#print-' + key).value;
       if (key === 'grouping') options.grouping = value as PrintOptions['grouping'];
       else options[key] = Number(value);
-      $('#print-plan-preview').innerHTML = '';
+      clearPreview();
     };
   function preview(plan: PrintPlan) {
     $('#print-plan-preview').innerHTML = plan.plates
@@ -342,11 +342,23 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
       )
       .join('');
   }
+  const clearPreview = () => {
+    clearPreview();
+    $('#print-plan').textContent = t('预览分盘');
+  };
   $('#print-plan').onclick = () =>
     void operation(async () => {
+      // The button is a toggle: the same click that opened the plates puts them away.
+      if ($('#print-plan-preview').innerHTML.trim()) {
+        clearPreview();
+        status('已收起分盘预览。');
+        return;
+      }
       status('正在计算分盘…');
       const plan = await api.plan();
       preview(plan);
+      $('#print-plan').textContent = t('收起预览');
+      $('#print-plan-preview').scrollIntoView({ block: 'nearest' });
       status('分盘完成。下图为零件占用范围，请在切片软件中检查支撑。');
     });
   $('#print-download').onclick = () =>

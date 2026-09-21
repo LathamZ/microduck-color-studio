@@ -59,7 +59,7 @@ Patch example (replace the ID with an ID from the manifest):
 }
 ```
 
-Materials: `pla`, `matte-pla`, `silk-pla`, `pla-cf`, `petg`, `matte-petg`, `metallic-petg`, `petg-cf`, `abs`, `asa`, `pc`, `pa`, `pa-cf`, `tpu`. Colors: exactly six hexadecimal digits after `#`. Intensity: 0.3–1.8; azimuth: −180–180 degrees; light presets: `studio`, `daylight`, `warm`, `cinema`. `pattern` is stored for any preset but only re-aims the cinema stage: `butterfly`, `rembrandt`, `split`, `rim`; omit it for the preset's own placement. `cinema` puts the model on a black stage lit by its lamps alone.
+Materials: `pla`, `matte-pla`, `silk-pla`, `pla-cf`, `petg`, `matte-petg`, `metallic-petg`, `petg-cf`, `abs`, `asa`, `pc`, `pa`, `pa-cf`, `tpu`. Colors: exactly six hexadecimal digits after `#`. Intensity: 0.3–1.8; azimuth: −180–180 degrees; elevation: 5–85 degrees; light presets: `studio`, `daylight`, `warm`, `cinema`. `pattern` is stored for any preset but only re-aims the cinema stage: `butterfly`, `rembrandt`, `split`, `rim`; omit it for the preset's own placement. `cinema` puts the model on a black stage lit by its lamps alone.
 
 The complete output is portable across browser and CLI. Camera angle/selection/isolation are inspection state and are not exported. Material keys on non-printable hardware are retained in the schema for uniformity, but hardware uses neutral hardware shading in the renderer; use material edits on printable parts.
 

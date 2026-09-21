@@ -88,9 +88,13 @@ export type Lighting = {
   preset: LightPreset;
   intensity: number;
   azimuth: number;
+  /** Height of the lamps above the horizon, in degrees. Absent keeps the preset's own. */
+  elevation?: number;
   /** Lamp setup. Absent means the preset's own default placement. */
   pattern?: LightPattern;
 };
+/** Lamp heights above the horizon the angle control accepts. */
+export const ELEVATION_RANGE = { min: 5, max: 85, default: 45 } as const;
 export type Surface = { layers: boolean };
 export type Palette = {
   schemaVersion: 1;
@@ -145,6 +149,16 @@ export function validatePalette(input: unknown, model: Manifest): Palette {
   )
     throw new Error('灯光参数无效');
   const pattern = normalizePattern(l.pattern);
+  let elevation: number | undefined;
+  if (l.elevation !== undefined && l.elevation !== null) {
+    if (
+      !Number.isFinite(l.elevation) ||
+      l.elevation < ELEVATION_RANGE.min ||
+      l.elevation > ELEVATION_RANGE.max
+    )
+      throw new Error('光源角度须为 5–85 度');
+    elevation = Math.round(l.elevation);
+  }
   if (!p.surface || typeof p.surface.layers !== 'boolean') throw new Error('表面设置无效');
   const ids = new Set(model.parts.map((x) => x.id));
   if (Object.keys(p.parts).length !== ids.size) throw new Error('方案必须包含模型的全部零件');
@@ -170,6 +184,7 @@ export function validatePalette(input: unknown, model: Manifest): Palette {
   }
   const lighting: Lighting = { preset: l.preset, intensity: l.intensity, azimuth: l.azimuth };
   if (pattern !== undefined) lighting.pattern = pattern;
+  if (elevation !== undefined) lighting.elevation = elevation;
   return {
     schemaVersion: 1,
     modelId: model.modelId,

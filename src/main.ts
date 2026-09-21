@@ -38,6 +38,7 @@ import {
   repairPalette,
   validatePalette,
   isColor,
+  ELEVATION_RANGE,
   MATERIALS,
   MATERIAL_LABELS,
   type Manifest,
@@ -46,7 +47,7 @@ import {
   type LightPattern,
   type MaterialKind,
 } from './domain';
-import { Viewer } from './viewer';
+import { LIGHT_RIGS, Viewer } from './viewer';
 import { looksUI } from './looks-ui';
 import { MOTION_LABELS, type MotionName } from './motion';
 const isDemo = new URLSearchParams(location.search).get('demo') === '1';
@@ -128,7 +129,7 @@ $('#app').innerHTML = `
 <main class="workspace">
 <aside class="parts-panel"><div class="panel-title"><h2>零件</h2><span id="part-count" class="count">—</span></div><label class="search">${icon('search')}<input id="search" type="search" placeholder="搜索零件或 ID" aria-label="搜索零件"></label><div class="part-filters"><button data-filter="printable" class="active">打印件</button><button data-filter="all">全部</button></div><div id="part-list" class="part-list"></div><div class="parts-footer">${icon('mouse-pointer-2')} 点击模型，也能选择零件</div></aside>
 <section class="stage"><div class="stage-top"><div><div class="eyebrow">YOUR LITTLE COMPANION</div><div class="slogan-row"><h1 id="slogan">小鸭子，也有大脾气。</h1><button id="shuffle-slogan" class="icon-button" aria-label="换一句标语" title="换一句标语">${icon('shuffle')}</button></div><span id="model-name" class="model-label">正在载入装配模型</span></div><span class="live-tag"><b></b> 实时 3D</span></div><div id="viewport"><div id="loading"><span class="loader"></span><span>正在组装你的小鸭子…</span></div></div><div class="stage-tools"><button class="icon-button" id="undo" aria-label="撤销" title="撤销">${icon('undo-2')}</button><button class="icon-button" id="redo" aria-label="重做" title="重做">${icon('redo-2')}</button><span></span><button class="icon-button" id="screenshot" aria-label="导出效果图" title="导出效果图">${icon('camera')}</button><div class="motion-tools"><button class="icon-button" id="motion-toggle" aria-label="让它动起来" title="让它动起来" aria-haspopup="menu" aria-expanded="false">${icon('footprints')}</button><div id="motion-menu" role="menu" hidden><span class="eyebrow">动作</span><button data-motion="sequence" role="menuitem">循环播放（默认）</button><button data-motion="walk" role="menuitem">走路</button><button data-motion="shake" role="menuitem">摇头</button><button data-motion="beak" role="menuitem">张嘴</button></div></div><button class="icon-button" id="fit" aria-label="恢复默认视角" title="恢复默认视角">${icon('maximize')}</button></div><div class="stage-bottom"><div class="view-controls"><button data-view="three-quarter" class="active">立体</button><button data-view="front">正面</button><button data-view="left">侧面</button><button data-view="back">背面</button></div><span class="gesture">拖动旋转 · 滚轮缩放</span></div><div class="stage-caption"><span id="stage-mode-caption">真实装配模型 · 外观预览</span><span id="selection-caption">选中零件后，可在右侧单独调色</span></div></section>
-<aside class="inspector"><div class="inspector-scroll"><div class="panel-title"><h2>外观实验室</h2>${icon('sliders-horizontal')}</div><div class="selected-heading"><span class="eyebrow">SELECTED PART</span><h3 id="selected-name">选择一个零件</h3><div id="selected-meta" class="meta">直接点击模型，或从左侧选择</div></div><div id="part-editor"><label class="field-label" for="part-color">零件颜色 <span id="color-code">#F1EFE7</span></label><div class="color-entry"><input type="color" id="part-color" value="#f1efe7" aria-label="零件颜色"><input id="hex-color" value="#F1EFE7" maxlength="7" aria-label="十六进制颜色"><button id="apply-role" class="text-button" title="应用到相同配色分组">同组应用</button></div><div class="field-label reference-heading">常用参考色</div><div id="quick-colors" class="quick-colors"></div><section id="owned-materials" class="owned-materials"></section><label class="field-label">打印材质</label><div class="material-options">${MATERIALS.map((m) => `<button data-material="${m}">${labels[m]}</button>`).join('')}</div><p id="material-description" class="small-note"></p><label class="check-row"><input type="checkbox" id="same-source"> 同名零件一起调整</label><div class="part-actions"><button id="isolate" class="button subtle">${icon('eye')} 单独查看</button><button id="reset-part" class="button subtle">${icon('rotate-ccw')} 还原</button></div></div><hr><div class="section-heading">${icon('sun')} 灯光与表面</div><div class="segmented light-options"><button data-light="studio" class="active">摄影棚</button><button data-light="daylight">日光</button><button data-light="warm">暖光</button><button data-light="cinema">电影</button></div><div class="field-label pattern-heading">打光方式</div><div class="segmented light-options" id="pattern-row"><button data-pattern="standard">默认</button><button data-pattern="butterfly">蝴蝶光</button><button data-pattern="rembrandt">伦勃朗</button><button data-pattern="split">分割光</button><button data-pattern="rim">轮廓光</button></div><p id="light-description" class="small-note light-note"></p><label class="field-label" for="intensity">光线强度 <output id="intensity-value">100%</output></label><input id="intensity" type="range" min="30" max="180" value="100"><label class="field-label" for="direction">光源方向 <output id="direction-value">−35°</output></label><input id="direction" type="range" min="-180" max="180" value="-35"><label class="check-row"><input id="layers" type="checkbox" checked> 模拟 0.2 mm 打印层纹</label><p class="small-note">光泽与层纹为近似模拟，非耗材实测；层纹按装配竖直方向展示。</p><hr><div class="section-heading">${icon('layers')} 装配视图</div><label class="field-label" for="explode">零件展开 <output id="explode-value">0%</output></label><input id="explode" type="range" min="0" max="100" value="0"><label class="check-row"><input id="hardware" type="checkbox" checked> 显示舵机与电子零件</label><p class="small-note model-note">原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。</p></div><button id="agent-info" class="agent-link">${icon('code')} Agent 接口与开放格式 ${icon('arrow-up-right')}</button></aside>
+<aside class="inspector"><div class="inspector-scroll"><div class="panel-title"><h2>外观实验室</h2>${icon('sliders-horizontal')}</div><div class="selected-heading"><span class="eyebrow">SELECTED PART</span><h3 id="selected-name">选择一个零件</h3><div id="selected-meta" class="meta">直接点击模型，或从左侧选择</div></div><div id="part-editor"><label class="field-label" for="part-color">零件颜色 <span id="color-code">#F1EFE7</span></label><div class="color-entry"><input type="color" id="part-color" value="#f1efe7" aria-label="零件颜色"><input id="hex-color" value="#F1EFE7" maxlength="7" aria-label="十六进制颜色"><button id="apply-role" class="text-button" title="应用到相同配色分组">同组应用</button></div><div class="field-label reference-heading">常用参考色</div><div id="quick-colors" class="quick-colors"></div><section id="owned-materials" class="owned-materials"></section><label class="field-label">打印材质</label><div class="material-options">${MATERIALS.map((m) => `<button data-material="${m}">${labels[m]}</button>`).join('')}</div><p id="material-description" class="small-note"></p><label class="check-row"><input type="checkbox" id="same-source"> 同名零件一起调整</label><div class="part-actions"><button id="isolate" class="button subtle">${icon('eye')} 单独查看</button><button id="reset-part" class="button subtle">${icon('rotate-ccw')} 还原</button></div></div><hr><div class="section-heading">${icon('sun')} 灯光与表面</div><div class="segmented light-options"><button data-light="studio" class="active">摄影棚</button><button data-light="daylight">日光</button><button data-light="warm">暖光</button><button data-light="cinema">电影</button></div><div class="field-label pattern-heading">打光方式</div><div class="segmented light-options" id="pattern-row"><button data-pattern="standard">默认</button><button data-pattern="butterfly">蝴蝶光</button><button data-pattern="rembrandt">伦勃朗</button><button data-pattern="split">分割光</button><button data-pattern="rim">轮廓光</button></div><p id="light-description" class="small-note light-note"></p><label class="field-label" for="intensity">光源强度 <output id="intensity-value">100%</output></label><input id="intensity" type="range" min="30" max="180" value="100"><label class="field-label" for="direction">光源方向 <output id="direction-value">−35°</output></label><input id="direction" type="range" min="-180" max="180" value="-35"><label class="field-label" for="elevation">光源角度 <output id="elevation-value">51°</output></label><input id="elevation" type="range" min="5" max="85" value="51"><p class="small-note light-legend">调整光源时出现箭头，指向灯的位置：<b class="key-dot"></b>大箭头是主光，负责投影；<b class="fill-dot"></b>小箭头是补光与轮廓光，本身不投影。</p><label class="check-row"><input id="layers" type="checkbox" checked> 模拟 0.4 mm 打印层纹</label><p class="small-note">光泽与层纹为近似模拟，非耗材实测；层纹按装配竖直方向展示。</p><hr><div class="section-heading">${icon('layers')} 装配视图</div><label class="field-label" for="explode">零件展开 <output id="explode-value">0%</output></label><input id="explode" type="range" min="0" max="100" value="0"><label class="check-row"><input id="hardware" type="checkbox" checked> 显示舵机与电子零件</label><p class="small-note model-note">原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。</p></div><button id="agent-info" class="agent-link">${icon('code')} Agent 接口与开放格式 ${icon('arrow-up-right')}</button></aside>
 <section class="palette-tray"><div class="palette-title"><span class="eyebrow">A GOOD START</span><h2>从一组喜欢的颜色开始</h2><span>套用后，还能逐件调整</span><button id="recommend-open" class="recommend-open">按我的耗材推荐 ↗</button></div><div class="preset-list">${presets.map((p, i) => `<button class="preset ${i === 0 ? 'active' : ''}" data-preset="${i}"><span class="swatch-strip">${p.colors.map((c) => `<span style="background:${c}"></span>`).join('')}</span><span class="preset-name">${p.name}</span><span class="preset-tag">${p.tag}</span></button>`).join('')}</div><div class="group-colors"><span>整体微调</span>${['主色', '结构', '点缀'].map((n, i) => `<label><input type="color" data-role-color="${['primary', 'structure', 'accent'][i]}" value="${presets[0].colors[i]}" aria-label="${n}颜色"><span>${n}</span></label>`).join('')}</div></section>
 </main><footer class="footer"><span>Made for humans. Ready for agents. <a href="https://github.com/LathamZ/microduck-color-studio" target="_blank" rel="noopener noreferrer">GitHub ↗</a></span><span>模型：Pollen Robotics · CC BY-NC-SA 4.0 <a href="./NOTICE.md" target="_blank" rel="noopener">来源与许可 ↗</a></span></footer>
 <div id="toast" role="status" aria-live="polite"></div><input type="file" id="import-file" accept="application/json,.json" hidden><dialog id="agent-dialog"><div class="panel-title"><h2>给 Agent 的入口</h2><button id="close-dialog" class="icon-button" aria-label="关闭">${icon('x')}</button></div><p>稳定零件 ID、可校验的 JSON 方案，以及浏览器中的显式 API。</p><div class="api-links"><a href="./models/parts.json" target="_blank">零件清单 ↗</a><a href="./palette.schema.json" target="_blank">方案 JSON Schema ↗</a><a href="./agent-api.md" target="_blank">API 文档 ↗</a></div><pre>window.colorStudio.getModel()
@@ -342,6 +343,9 @@ function syncLighting() {
   $<HTMLInputElement>('#direction').value = String(l.azimuth);
   $('#intensity-value').textContent = Math.round(l.intensity * 100) + '%';
   $('#direction-value').textContent = l.azimuth + '°';
+  const elevation = l.elevation ?? defaultElevation(l.preset);
+  $('#elevation-value').textContent = elevation + '°';
+  $<HTMLInputElement>('#elevation').value = String(elevation);
   // The lamp setup belongs to the cinema stage; the other presets keep their own placement.
   $('#pattern-row').hidden = !cinema;
   document.querySelector<HTMLElement>('.pattern-heading')!.hidden = !cinema;
@@ -358,6 +362,11 @@ function syncLighting() {
     .querySelectorAll<HTMLElement>('[data-pattern]')
     .forEach((x) => x.classList.toggle('active', x.dataset.pattern === (l.pattern || 'standard')));
   viewer.light(l);
+}
+/** Where the key lamp sits when the angle control has not been touched. */
+function defaultElevation(preset: Lighting['preset']): number {
+  const rig = LIGHT_RIGS[preset] || LIGHT_RIGS.studio;
+  return Math.round((Math.atan2(rig.key.height, 420) * 180) / Math.PI);
 }
 function setLighting(patch: Partial<Lighting>) {
   const p = structuredClone(state.palette);
@@ -601,12 +610,26 @@ function bind() {
       update();
     };
   });
-  const previewLighting = () => {
+  let lightHintTimer: ReturnType<typeof setTimeout> | undefined;
+  const previewLighting = (showHint = false) => {
     const intensity = Number($<HTMLInputElement>('#intensity').value);
     const direction = Number($<HTMLInputElement>('#direction').value);
+    const elevation = Number($<HTMLInputElement>('#elevation').value);
     $('#intensity-value').textContent = intensity + '%';
     $('#direction-value').textContent = direction + '°';
-    viewer.light({ ...state.palette.lighting, intensity: intensity / 100, azimuth: direction });
+    $('#elevation-value').textContent = elevation + '°';
+    viewer.light({
+      ...state.palette.lighting,
+      intensity: intensity / 100,
+      azimuth: direction,
+      elevation,
+    });
+    if (showHint) {
+      // The arrow tracks the lamp while the slider moves and fades out shortly after.
+      viewer.showLightHint(direction);
+      clearTimeout(lightHintTimer);
+      lightHintTimer = setTimeout(() => viewer.showLightHint(null), 700);
+    }
   };
   document
     .querySelectorAll<HTMLElement>('[data-light]')
@@ -622,12 +645,23 @@ function bind() {
             e.dataset.pattern === 'standard' ? undefined : (e.dataset.pattern as LightPattern),
         })),
   );
-  $('#intensity').oninput = previewLighting;
-  $('#direction').oninput = previewLighting;
+  $('#intensity').oninput = () => previewLighting();
+  $('#direction').oninput = () => previewLighting(true);
+  // Moving the angle is also aiming a lamp, so the arrows come out for it too.
+  $('#elevation').oninput = () => previewLighting(true);
   $('#intensity').onchange = () =>
     setLighting({ intensity: Number($<HTMLInputElement>('#intensity').value) / 100 });
-  $('#direction').onchange = () =>
+  $('#direction').onchange = () => {
     setLighting({ azimuth: Number($<HTMLInputElement>('#direction').value) });
+    // Release: fade out on the spot instead of waiting for the idle timer.
+    clearTimeout(lightHintTimer);
+    viewer.showLightHint(null);
+  };
+  $('#elevation').onchange = () => {
+    setLighting({ elevation: Number($<HTMLInputElement>('#elevation').value) });
+    clearTimeout(lightHintTimer);
+    viewer.showLightHint(null);
+  };
   $('#layers').onchange = () => {
     const p = structuredClone(state.palette);
     p.surface.layers = $<HTMLInputElement>('#layers').checked;
