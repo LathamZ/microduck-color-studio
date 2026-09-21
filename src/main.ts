@@ -924,6 +924,9 @@ async function init() {
         },
         select,
         stock,
+        {
+          load: async (bytes, name) => (await printing()).load(bytes, name),
+        },
       );
     }
   } catch (error) {

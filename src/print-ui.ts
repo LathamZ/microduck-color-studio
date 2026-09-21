@@ -343,7 +343,7 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
       .join('');
   }
   const clearPreview = () => {
-    clearPreview();
+    $('#print-plan-preview').innerHTML = '';
     $('#print-plan').textContent = t('预览分盘');
   };
   $('#print-plan').onclick = () =>

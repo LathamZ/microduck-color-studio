@@ -10,7 +10,16 @@ import { translateText } from '../src/translations';
  */
 const SKIP_FILES = new Set(['i18n.ts']);
 const SKIP_PIECES = ['打印包 / Print package'];
-const ALLOWED_RUNS = new Set(['中文', '刚刚', '分钟前', '小时前', '天前', '保存', '配色']);
+const ALLOWED_RUNS = new Set([
+  '中文', // The language toggle names the language it switches to.
+  '刚刚',
+  '分钟前',
+  '小时前',
+  '天前',
+  '保存',
+  '配色', // relativeTime() and suggestedName() return English themselves when locale is en.
+  '我的第一版', // The demo types this as a scheme name; user content is never translated.
+]);
 const CJK = /[一-鿿]/;
 const CJK_RUNS = /[一-鿿]+/g;
 const srcDir = new URL('../src/', import.meta.url);
