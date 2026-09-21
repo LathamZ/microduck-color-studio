@@ -41,10 +41,17 @@
             "enum": [
               "pla",
               "matte-pla",
+              "silk-pla",
+              "pla-cf",
               "petg",
               "matte-petg",
               "metallic-petg",
-              "pla-cf",
+              "petg-cf",
+              "abs",
+              "asa",
+              "pc",
+              "pa",
+              "pa-cf",
               "tpu"
             ]
           }

@@ -44,12 +44,23 @@
                 "enum": [
                   "pla",
                   "matte-pla",
+                  "silk-pla",
+                  "pla-cf",
                   "petg",
                   "matte-petg",
                   "metallic-petg",
-                  "pla-cf",
+                  "petg-cf",
+                  "abs",
+                  "asa",
+                  "pc",
+                  "pa",
+                  "pa-cf",
                   "tpu"
                 ]
+              },
+              "stockId": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]{1,80}$"
               },
               "coating": {
                 "type": "object",

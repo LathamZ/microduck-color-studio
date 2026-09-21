@@ -19,13 +19,21 @@ api.setLighting({ preset: 'warm', intensity: 1.2, azimuth: 45 });
 api.setSurface({ layers: true });
 api.selectPart(ids[0]);
 api.setView('three-quarter'); // front | back | left | right | three-quarter
+api.playMotion('sequence'); // walk | shake | beak | 'sequence' | null to stop
+api.getRig(); // measured joints: parent, servo axis, horn pivot, driven parts
 const result = api.getPalette();
 api.undo();
 api.redo();
 api.importPalette(before); // validated atomically
+
+// Saved looks live in this browser under `color-studio:looks:<modelId>`
+api.getLooks(); // [{id, name, savedAt, palette}], newest first
+api.saveLook('Evening warm'); // adds, or replaces the look with that name
+api.applyLook(api.getLooks()[0].id); // commits through the shared validator and undo history
 ```
 
-`updateParts`, `setLighting`, `setSurface` and `importPalette` return the resulting complete palette. They update the UI, render, local storage and undo history. Invalid mutations throw before changing state. Empty/no-op updates do not create history entries. `selectPart` throws for unknown IDs. `setView` uses the default view for an unknown view name.
+`updateParts`, `setLighting`, `setSurface` and `importPalette` return the resulting complete palette.
+Passing `stockId` in an `updateParts` patch links a part to an item in the local filament inventory, so the part follows that spool's color and material. Any hand-picked `color` or `material` releases the link unless the same patch sets `stockId` again. They update the UI, render, local storage and undo history. Invalid mutations throw before changing state. Empty/no-op updates do not create history entries. `selectPart` throws for unknown IDs. `setView` uses the default view for an unknown view name.
 
 Events: `colorstudio:change` carries a deep-copied palette in `event.detail`; `colorstudio:selection` carries `{id}`. These are local DOM events. Agents whose browser tools only allow read-only evaluation should use CLI plus the visible JSON import button.
 
@@ -51,7 +59,7 @@ Patch example (replace the ID with an ID from the manifest):
 }
 ```
 
-Materials: `pla`, `matte-pla`, `petg`, `matte-petg`, `metallic-petg`, `pla-cf`, `tpu`. Colors: exactly six hexadecimal digits after `#`. Intensity: 0.3–1.8; azimuth: −180–180 degrees; light presets: `studio`, `daylight`, `warm`.
+Materials: `pla`, `matte-pla`, `silk-pla`, `pla-cf`, `petg`, `matte-petg`, `metallic-petg`, `petg-cf`, `abs`, `asa`, `pc`, `pa`, `pa-cf`, `tpu`. Colors: exactly six hexadecimal digits after `#`. Intensity: 0.3–1.8; azimuth: −180–180 degrees; light presets: `studio`, `daylight`, `warm`, `cinema`. `pattern` is stored for any preset but only re-aims the cinema stage: `butterfly`, `rembrandt`, `split`, `rim`; omit it for the preset's own placement. `cinema` puts the model on a black stage lit by its lamps alone.
 
 The complete output is portable across browser and CLI. Camera angle/selection/isolation are inspection state and are not exported. Material keys on non-printable hardware are retained in the schema for uniformity, but hardware uses neutral hardware shading in the renderer; use material edits on printable parts.
 
@@ -71,7 +79,7 @@ const plans = api.recommend('paint'); // stock | add-one | paint
 api.importPalette(plans[0].palette);
 ```
 
-`setInventory` validates before mutation, saves locally, updates an open inventory panel, and returns a deep copy. `recommend` is read-only: it returns up to three distinct recommendation plans and does not apply a look. Its output includes the full palette, used stock IDs, explicit missing material requirements and proposed acrylic colors/part IDs. A missing material is never claimed to be owned. `complete` means no filament purchase is required; a paint plan can still require acrylic pens.
+`setInventory` validates before mutation, saves locally, updates an open inventory panel, pushes changes onto every linked part, and returns a deep copy. `recommend` is read-only: it returns up to three distinct recommendation plans and does not apply a look. Its output includes the full palette, used stock IDs, explicit missing material requirements and proposed acrylic colors/part IDs. A missing material is never claimed to be owned. `complete` means no filament purchase is required; a paint plan can still require acrylic pens.
 
 ```sh
 npm run -s palette -- inventory-validate --in examples/inventory.json
@@ -79,6 +87,8 @@ npm run -s palette -- recommend --inventory examples/inventory.json --mode add-o
 ```
 
 Inventory schema: `inventory.schema.json`. Recommendation uses deterministic CIE76 Lab proximity to the adapter's curated palettes, enforces TPU/rigid separation and deduplicates identical results. It is a transparent heuristic, not a learned aesthetic evaluator. “Add one” limits discretionary color spools to one; missing essential material types are listed separately.
+
+Recommended palettes carry a `stockId` for every part taken from stock, so applying a recommendation stays linked to the library.
 
 Acrylic is a separate optional `coating: {kind:'acrylic',color:'#RRGGBB'}` on a part. `color` remains the actual filament color. Only model instances with `paintable:true` accept coatings. The Microduck adapter conservatively permits the hard jaw exterior only; soft TPU and bearing/contact parts are excluded. A base-color edit clears its coating. The renderer approximates coating across the whole permitted part, not brush strokes or printed masks. Validate adhesion on a sample before painting.
 
@@ -101,7 +111,7 @@ The print workflow is independent of the display mesh. No geometry is obtained f
 ```ts
 const setup = await api.importPrintModel(bytes, 'my-HD1910.3mf'); // Uint8Array
 // Inspect source.objects: stable item IDs, original names, dimensions,
-// suggestedPartIds, originalColor and originalMaterial. No guessing for duplicates.
+// matches (ranked part candidates with confidence), originalColor and originalMaterial.
 const assignments = setup.assignments;
 assignments[0] = {
   objectId: assignments[0].objectId,
@@ -118,6 +128,20 @@ const plan = await api.configurePrint(assignments, {
   grouping: 'color',
 });
 const zipBytes = await api.exportPrint(); // Uint8Array; no automatic download
+```
+
+### Object-to-part matching
+
+`source.objects[].matches` ranks printable parts by name similarity: case, separators, file extensions and numeric prefixes are ignored, and an object name that contains a part name still matches it (`ankle_left_v2` → `ankle_left`). Two parts that share a name are both returned with `ambiguous: true`.
+
+- confidence ≥ `0.8` (`MATCH_ACCEPT`): applied as the object's part binding.
+- `0.5`–`0.8`, or a tie between candidates: the closest candidate is applied and the row is marked with an amber `*` for the user to check.
+- below `0.5` (`MATCH_FLOOR`), or no candidate above `0.15`: nothing is preselected, the row is marked with a red `*`, and the object keeps the color and material it came in with.
+
+Nothing blocks the export. `exportPrint()` always runs; objects without a match are plated in their source colors, and `getPrintMatches()` lists what was applied so a caller can report or override it. `getPrintMatches()` returns the current state per object: `{objectId, name, partId, confidence, needsConfirm}`.
+
+```js
+api.getPrintMatches(); // audit: partId, confidence and whether a row is only a suggestion
 ```
 
 `getPrintSetup()` returns a deep copy of the current source summary, assignments and options. `configurePrint()` validates the complete proposal and produces a plan before committing it. Every source object must have an explicit `enabled` decision. Each included object needs either `partId` (reads the current palette at planning/export time) or an independent `finish`. `grouping:'part'` additionally separates part IDs or independent source names. Materials and base colors are always separated; acrylic remains in `finish.coating` for post-processing.
