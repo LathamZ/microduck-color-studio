@@ -8,7 +8,7 @@ Microduck 3D color studio. Customize the colors, materials and lighting of a rea
 
 ![Microduck Color Studio: a 15-second feature preview](docs/media/studio-demo.gif)
 
-The preview shows orbiting, whole-model palettes, individual finishes, lighting and inventory recommendations. It captures only the webpage viewport and uses example inventory.
+The preview shows the assembly, palettes from the tray, a silk PLA finish, linking a part to a filament and then editing that spool, saving and switching looks, the cinema stage with its lamp setups, aiming the lights, the walk, and a print export with its plate preview. It captures only the webpage viewport and uses example inventory.
 
 ## What you can do
 
