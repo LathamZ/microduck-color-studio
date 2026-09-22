@@ -4,7 +4,7 @@
  * thing on the robot that can actually turn. `src/models/active.ts` says which servo drives
  * which parts; `src/viewer.ts` measures the horns and applies the angles.
  */
-export const MOTIONS = ['walk', 'shake', 'tilt', 'beak'] as const;
+export const MOTIONS = ['walk', 'sit', 'kick', 'grab', 'recover', 'shake', 'tilt', 'beak'] as const;
 export type MotionName = (typeof MOTIONS)[number];
 export type JointName =
   | 'root'
@@ -117,28 +117,49 @@ export function footTarget(phase: number, stride = 18, lift = 11): Vec2 {
   const eased = u * u * (3 - 2 * u);
   return [-stride + 2 * stride * eased, lift * Math.sin(Math.PI * u)];
 }
-/** Legs swing from the hip, fold at the knee and keep the sole flat without any tuning. */
-function leg(side: 'L' | 'R', phase: number, geom?: LegGeometry, bob = 0): Pose {
+/**
+ * One leg placed by hand: `x` is the ankle ahead of the hip and `y` its height above the ground,
+ * both in the sagittal plane. Solving for the ankle is what keeps the flat sole flat, so a pose
+ * only ever has to say where the foot should be.
+ */
+function legAt(side: 'L' | 'R', target: Vec2, geom?: LegGeometry, bob = 0): Pose {
+  const [x, y] = target;
   if (!geom) {
-    // No measured linkage (plain unit tests): a rough approximation of the same gait.
-    const swing = 0.34 * Math.sin(phase);
-    const flex = Math.max(0, Math.cos(phase)) ** 1.4 * 0.45;
+    // No measured linkage (plain unit tests): drive the joints straight from the target.
+    const swing = Math.atan2(x, Math.max(1, -y - 40));
+    const flex = Math.max(0, y - 40) * 0.012;
     return {
       [`hip${side}`]: { angle: swing },
       [`knee${side}`]: { angle: -flex },
-      [`ankle${side}`]: { angle: -swing + flex * 0.85 },
+      [`ankle${side}`]: { angle: -swing + flex },
     };
   }
   const rest = geom.hipToKnee[1] + geom.kneeToAnkle[1];
-  const [x, y] = footTarget(phase);
-  // `y` lifts the swinging foot; `bob` raises the hip, so the stance foot would rise with it
-  // and has to be pulled down by the same amount to stay planted on the ground.
+  // `y` lifts the foot off the ground; `bob` raises the hip, so the stance foot would rise with
+  // it and has to be pulled down by the same amount to stay planted.
   const solved = solveLeg(geom, [x, rest + y - bob]);
   return {
     [`hip${side}`]: { angle: solved.hip },
     [`knee${side}`]: { angle: solved.knee },
     [`ankle${side}`]: { angle: solved.ankle },
   };
+}
+/** Legs swing from the hip, fold at the knee and keep the sole flat without any tuning. */
+const leg = (side: 'L' | 'R', phase: number, geom?: LegGeometry, bob = 0) =>
+  legAt(side, footTarget(phase), geom, bob);
+/** Ease in and out, so no joint starts or stops with a jolt. */
+const smooth = (x: number) => {
+  const v = Math.min(1, Math.max(0, x));
+  return v * v * (3 - 2 * v);
+};
+/**
+ * The shape every action below is built from: 0 → 1 over `rise`, held, then back to 0 over
+ * `fall`. The rest of the cycle stays at rest, which is what makes each one loop cleanly.
+ */
+function arc(t: number, rise: number, hold: number, fall: number): number {
+  if (t < rise) return smooth(t / rise);
+  if (t < rise + hold) return 1;
+  return 1 - smooth((t - rise - hold) / fall);
 }
 /** How much of the cycle a leg spends in the air: 0 while planted, 1 at mid-swing. */
 function swingWeight(phase: number): number {
@@ -172,6 +193,104 @@ export function walk(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose
     headPitch: { angle: 0.05 * lift },
     ...leg('L', phase, legs?.L, 0),
     ...leg('R', phase + Math.PI, legs?.R, 0),
+  };
+}
+/** How long each action runs, in seconds: long enough to read, short enough to loop. */
+export const SIT_SECONDS = 6.4;
+export const KICK_SECONDS = 2.6;
+export const GRAB_SECONDS = 5.2;
+export const RECOVER_SECONDS = 8.6;
+/**
+ * Sit and stand: the trunk settles onto its haunches while the legs fold under it, holds, then
+ * pushes back up. The feet never move — the hips come down to them, and the leg servos fold by
+ * exactly that much, which is the whole trick of sitting down on legs that cannot step sideways.
+ */
+export function sit(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose {
+  const k = arc(t, 1.6, 3.2, 1.6);
+  const drop = 34 * k;
+  return {
+    // The trunk tips back a little on the way down, the way a resting bird settles.
+    root: { z: 0.09 * k, dy: -drop },
+    // The legs turn and open outward so the shins fold under the body rather than through it.
+    turnL: { angle: 0.13 * k },
+    turnR: { angle: -0.13 * k },
+    splayL: { angle: 0.17 * k },
+    splayR: { angle: -0.17 * k },
+    // The neck keeps the head where it was, so the duck keeps looking at you as it sits.
+    neckBase: { angle: -0.1 * k },
+    neckPitch: { angle: -0.07 * k },
+    ...legAt('L', [7 * k, drop], legs?.L),
+    ...legAt('R', [7 * k, drop], legs?.R),
+  };
+}
+/**
+ * A boot: the right leg winds up, snaps forward and up, then drops back to a stand. One shot,
+ * so the rest of the cycle is simply standing — which is what "straight back to walking" means
+ * when the loop comes round again.
+ */
+export function kick(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose {
+  const boot = arc(t, 0.3, 0.16, 0.6);
+  const lean = arc(t, 0.3, 0.6, 0.9);
+  // The trunk drops as it leans, so both feet are solved for a hip that much lower.
+  const ground = 8 * lean;
+  return {
+    // The body drops and leans into the boot; the head follows the foot out and back.
+    root: { z: 0.07 * lean, dy: -ground },
+    neckBase: { angle: -0.22 * lean },
+    neckPitch: { angle: -0.1 * lean },
+    headPitch: { angle: 0.14 * boot - 0.06 * lean },
+    // The stance leg tucks under as the body leans into the kick.
+    ...legAt('L', [-7 * lean, ground], legs?.L),
+    ...legAt('R', [-20 + 92 * boot, ground + 44 * boot], legs?.R),
+  };
+}
+/**
+ * Scoop: crouch, fold the neck until the beak is at the ground, close it, push back up. The beak
+ * is this robot's only end effector, so the neck does the reaching and the body helps by
+ * getting lower — the same trade the real duck makes when it picks something up.
+ */
+export function grab(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose {
+  const bend = arc(t, 1.5, 1.5, 1.6);
+  // The beak closes once the head is down, holds the scoop, and lets go as the head comes up.
+  const bite = arc(t - 2.1, 0.3, 0.8, 0.5);
+  const drop = 44 * bend;
+  return {
+    // Everything the neck cannot reach, the body gets lower for. The fold stops near 100°:
+    // past that the head tips so far that its own shell, not the beak, becomes the low point.
+    root: { z: 0.17 * bend, dy: -drop },
+    neckBase: { angle: -1.05 * bend },
+    neckPitch: { angle: -0.66 * bend },
+    // The jaw opens on the way down and closes on the scoop.
+    jaw: { angle: -0.5 * bend + 0.46 * bite },
+    ...legAt('L', [12 * bend, drop], legs?.L),
+    ...legAt('R', [12 * bend, drop], legs?.R),
+  };
+}
+/**
+ * Knocked flat onto its back, then up again. The body pivots about the point it touches the
+ * ground at, which is what keeps the head and legs out of the floor through the roll — a body
+ * this tall cannot simply turn about its own middle. Once it is down the legs work the air,
+ * and the push back onto the feet is the same roll run backwards.
+ */
+export function recover(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose {
+  const down = arc(t, 1.0, 2.9, 2.3);
+  const angle = 1.58 * down;
+  // Rotating about the ground under the trunk: the pivot is the body, the floor is the axis.
+  const reach = -88 * Math.sin(angle);
+  const lift = 88 * (Math.cos(angle) - 1);
+  // Legs cycle against thin air while it is down. Once the body is on its back its own
+  // "forward" points at the sky, so reaching the feet out ahead is what lifts them up.
+  const struggle = down * Math.sin(t * 5.6) ** 2;
+  const air = 42 * down + 13 * struggle;
+  return {
+    root: { z: angle, dx: reach, dy: lift },
+    // The neck goes limp on the way over so the head rides up rather than scraping.
+    neckBase: { angle: -0.3 * down - 0.12 * struggle },
+    neckPitch: { angle: -0.26 * down },
+    headPitch: { angle: 0.24 * struggle },
+    jaw: { angle: -0.22 * struggle },
+    ...legAt('L', [air, 7 * struggle], legs?.L),
+    ...legAt('R', [air - 9 * struggle, -5 * struggle], legs?.R),
   };
 }
 /** Two quick head turns, easing in and out. */
@@ -210,14 +329,24 @@ export function beak(t: number): Pose {
     neckPitch: { angle: 0.04 * open },
   };
 }
-export const motionPoses: Record<MotionName, (t: number) => Pose> = {
+/** Both legs' measured linkages, as `viewer.legs` reports them. */
+export type Legs = { L: LegGeometry; R: LegGeometry };
+export const motionPoses: Record<MotionName, (t: number, legs?: Legs) => Pose> = {
   walk,
+  sit,
+  kick,
+  grab,
+  recover,
   shake,
   tilt,
   beak,
 };
 export const MOTION_LABELS: Record<MotionName, string> = {
   walk: '走路',
+  sit: '坐下站起',
+  kick: '踢一下',
+  grab: '叼一口',
+  recover: '翻身站起',
   shake: '摇头',
   tilt: '歪头',
   beak: '张嘴',
@@ -245,16 +374,12 @@ export function sequenceAt(t: number): { motion: MotionName; local: number } {
   return { motion: last.motion, local: last.duration };
 }
 /** Pose of the default loop at `t`, or of a single motion when one is chosen. */
-export function poseAt(
-  t: number,
-  motion: MotionName | 'sequence',
-  legs?: { L: LegGeometry; R: LegGeometry },
-): Pose {
+export function poseAt(t: number, motion: MotionName | 'sequence', legs?: Legs): Pose {
   if (motion === 'sequence') {
     const step = sequenceAt(t);
-    return step.motion === 'walk' ? walk(step.local, legs) : motionPoses[step.motion](step.local);
+    return motionPoses[step.motion](step.local, legs);
   }
-  return motion === 'walk' ? walk(t, legs) : motionPoses[motion](t);
+  return motionPoses[motion](t, legs);
 }
 /** Blend two poses. Used to cross-fade when a motion starts, changes or stops. */
 export function blendPose(from: Pose, to: Pose, ratio: number): Pose {

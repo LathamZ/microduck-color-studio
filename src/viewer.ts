@@ -690,8 +690,10 @@ export class Viewer {
       this.joints.get(jointId)!.ids.push(partId);
       this.jointOf.set(partId, jointId);
     }
-    // Parents first, so each joint's world matrix can build on its parent's.
+    // Parents first, so each joint's world matrix can build on its parent's. The trunk has no
+    // servo above it, so it sorts ahead of every joint that hangs off it.
     const depth = (id: JointName): number => {
+      if (id === 'root') return -1;
       let steps = 0,
         current = this.joints.get(id)?.parent;
       while (current && current !== 'root' && steps < this.joints.size) {
