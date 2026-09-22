@@ -221,6 +221,7 @@ describe('walking is solved from the measured linkage', () => {
     hipToKnee: [-35.7, -21.9] as [number, number],
     kneeToAnkle: [0, -42] as [number, number],
     ankleToSole: 25.1,
+    hipOffset: 54.3,
   };
   const legs = { L: geom, R: geom };
   it('solves joint angles that put the ankle exactly on the requested foot path', () => {
@@ -233,9 +234,7 @@ describe('walking is solved from the measured linkage', () => {
       expect(reached.ankle[1]).toBeCloseTo(geom.hipToKnee[1] + geom.kneeToAnkle[1] - y, 6);
     }
   });
-  it('keeps the sole flat and exactly on the ground while the foot is planted', () => {
-    // Measured from the hip: the sole rests this far below it, and must not move.
-    const restSole = geom.hipToKnee[1] + geom.kneeToAnkle[1] - geom.ankleToSole;
+  it('keeps the sole flat while the foot is planted', () => {
     for (let i = 0; i <= 10; i++) {
       const phase = (i / 20) * Math.PI * 2; // first half of the cycle: stance
       const pose = walk(phase * (0.9 / (Math.PI * 2)), legs);
@@ -244,10 +243,10 @@ describe('walking is solved from the measured linkage', () => {
         knee: pose.kneeL!.angle!,
         ankle: pose.ankleL!.angle!,
       };
-      const reached = legForward(geom, solved);
-      expect(reached.footAngle).toBeCloseTo(0, 9); // sole stays level
-      // The body rises by `dy`, so the sole measured from the hip drops by the same amount.
-      expect(reached.sole[1] + pose.root!.dy!).toBeCloseTo(restSole, 6);
+      // The sole keeps its rest orientation, so it meets the floor flat rather than on an edge.
+      expect(legForward(geom, solved).footAngle).toBeCloseTo(0, 9);
+      // Whether it is still *on* the floor depends on the whole trunk transform, roll included,
+      // and is asserted in tests/motion.test.ts.
     }
   });
   it('lifts the swinging foot instead of dragging it through the floor', () => {

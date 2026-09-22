@@ -728,6 +728,8 @@ export class Viewer {
         hipToKnee: [knee.pivot.x - hip.pivot.x, knee.pivot.y - hip.pivot.y],
         kneeToAnkle: [ankle.pivot.x - knee.pivot.x, ankle.pivot.y - knee.pivot.y],
         ankleToSole: ankle.pivot.y - soleBottom,
+        // Measured against the trunk's pivot, which is what a whole-body roll turns about.
+        hipOffset: Math.abs(hip.pivot.z - this.joints.get('root')!.pivot.z),
       };
     };
     const L = build('L');

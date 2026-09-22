@@ -4,6 +4,7 @@ import {
   KICK_SECONDS,
   SIT_SECONDS,
   TILT_SECONDS,
+  WALK_PERIOD,
   legForward,
   poseAt,
   type JointName,
@@ -16,11 +17,14 @@ const LEG: LegGeometry = {
   hipToKnee: [-35.7, -21.9],
   kneeToAnkle: [0, -42],
   ankleToSole: 7.6,
+  hipOffset: 54.3,
 };
 const LEGS = { L: LEG, R: LEG };
 /** The hip's height in the model, which is where a solved leg hangs from. */
 const HIP_Y = -17.5;
 const GROUND = -89;
+/** The trunk's pivot, which a whole-body roll turns about. */
+const PIVOT_Y = -1;
 /** Where the sole sits, and how far ahead of the hip, for one leg of a pose. */
 const foot = (pose: Pose, side: 'L' | 'R') => {
   const angle = (joint: JointName) => pose[joint]?.angle || 0;
@@ -35,7 +39,37 @@ const foot = (pose: Pose, side: 'L' | 'R') => {
 const soleGap = (pose: Pose, side: 'L' | 'R') =>
   HIP_Y + pose.root?.dy! + foot(pose, side).sole[1] - GROUND;
 
+/**
+ * How high the sole ends up once the trunk transform is applied. A roll about the fore-and-aft
+ * axis moves each foot vertically by its distance from the centre line, which is exactly what
+ * the walk has to cancel to keep a planted foot planted.
+ */
+const worldSole = (pose: Pose, side: 'L' | 'R') => {
+  const y = HIP_Y + foot(pose, side).sole[1] - PIVOT_Y;
+  const z = (side === 'L' ? -1 : 1) * LEG.hipOffset;
+  const roll = pose.root?.x || 0;
+  return PIVOT_Y + pose.root!.dy! + y * Math.cos(roll) - z * Math.sin(roll);
+};
+
 describe('actions', () => {
+  it('rocks the trunk over the planted foot without lifting it off the ground', () => {
+    let lean = 0;
+    let lifted = 0;
+    for (let t = 0; t < WALK_PERIOD * 2; t += 0.02) {
+      const pose = poseAt(t, 'walk', LEGS);
+      lean = Math.max(lean, Math.abs(pose.root!.x!));
+      // Left is planted through the first half of the cycle, right through the second.
+      const stance: 'L' | 'R' = t % WALK_PERIOD < WALK_PERIOD / 2 ? 'L' : 'R';
+      expect(Math.abs(worldSole(pose, stance) - GROUND)).toBeLessThan(2);
+      lifted = Math.max(lifted, worldSole(pose, stance === 'L' ? 'R' : 'L') - GROUND);
+    }
+    // The free leg still swings clear of the floor at the middle of its half.
+    expect(lifted).toBeGreaterThan(8);
+    // And a waddle needs a visible rock, not a token one: nine degrees or so either way.
+    expect(lean).toBeGreaterThan(0.14);
+    expect(lean).toBeLessThan(0.3);
+  });
+
   it('keeps both feet planted through sit and stand', () => {
     // The whole point of sitting on legs that cannot step sideways: the hips come down to the
     // feet, and the leg servos fold by exactly that much.

@@ -51,6 +51,8 @@ export type LegGeometry = {
   hipToKnee: Vec2;
   kneeToAnkle: Vec2;
   ankleToSole: number;
+  /** How far the hip sits from the trunk's centre line: what a body roll tips the leg about. */
+  hipOffset: number;
 };
 const length = (v: Vec2) => Math.hypot(v[0], v[1]);
 const rotate = (v: Vec2, angle: number): Vec2 => [
@@ -166,33 +168,49 @@ function swingWeight(phase: number): number {
   return Math.max(0, Math.sin(phase)) ** 0.8;
 }
 /**
- * Walking in place with the trunk held steady. Nothing moves the body itself: balance is
- * carried by the hips and legs, and whatever is left shows up as a neck-and-head sway, the
- * way a walking bird settles its head over its feet. Feet point straight ahead between steps.
+ * The waddle. A duck's legs are short and set wide, so its weight cannot pass between its
+ * feet: the trunk swings out over whichever foot is carrying it and the hips tip with it. The
+ * hips sit about 54 mm either side of the trunk's centre, so a nine degree lean lifts one hip
+ * and drops the other by more than a centimetre — each leg is told how far its own hip moved,
+ * which is what keeps the planted foot on the ground while the pelvis rocks above it. The head
+ * counter-rolls to hold its eyes level, the way a bird's does, and the roll and the travel
+ * always point at the foot that has the weight.
  */
-export function walk(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose {
+export function walk(t: number, legs?: Legs): Pose {
   const phase = (t / WALK_PERIOD) * TAU;
   const step = Math.sin(phase);
-  const lift = Math.sin(2 * phase);
   const swingL = swingWeight(phase);
   const swingR = swingWeight(phase + Math.PI);
+  /** +1 while the left foot is carrying the weight, -1 while the right one is. */
+  const weight = Math.sin(phase);
+  const roll = -0.21 * weight;
+  const shift = -9 * weight;
+  const bob = -1.5 * Math.cos(2 * phase);
+  const half = legs ? (legs.L.hipOffset + legs.R.hipOffset) / 2 : 0;
+  const rise = (side: 'L' | 'R') => Math.sin(roll) * half * (side === 'L' ? 1 : -1);
+  // Rolling about the trunk instead of about the floor drags both feet the same way. The hips
+  // open and close against that — the knee rotation a waddling bird uses — so the foot the duck
+  // is standing on stays where it put it. `DRAG_ARM` is the roll's lever to the floor, `LEG` the
+  // hip's to the foot; the result is about eight degrees either side of the built stance.
+  const DRAG_ARM = 88;
+  const LEG = 71.4;
+  const kneeFix = (shift - DRAG_ARM * Math.sin(roll)) / LEG;
   return {
-    // The trunk middle stays put; there is deliberately no body bob or lean here.
-    root: { x: 0, y: 0, z: 0, dy: 0 },
-    // Hips do the adjusting: each leg turns and opens slightly as it lifts, and closes as
-    // it plants, which is what keeps the stance foot under a motionless trunk.
+    // Roll and sideways travel, both leaning onto the foot that is carrying.
+    root: { x: roll, dz: shift, dy: bob },
+    // Each leg turns and opens a little as it lifts and closes as it plants, on top of the
+    // fold its own hip needs to keep the foot where it was put.
     turnL: { angle: 0.05 * swingL },
     turnR: { angle: -0.05 * swingR },
-    splayL: { angle: 0.04 * swingL - 0.018 * swingR },
-    splayR: { angle: -0.04 * swingR + 0.018 * swingL },
-    // The neck is locked to the trunk and does not move on its own; the head above it is
-    // what shifts, which is how the weight reads without the body ever wobbling.
+    splayL: { angle: 0.04 * swingL - 0.018 * swingR + kneeFix },
+    splayR: { angle: -0.04 * swingR + 0.018 * swingL - kneeFix },
+    // The neck goes with the trunk; the head above it stays level.
     neckBase: { angle: 0 },
     neckPitch: { angle: 0 },
-    headYaw: { angle: -0.06 * step },
-    headPitch: { angle: 0.05 * lift },
-    ...leg('L', phase, legs?.L, 0),
-    ...leg('R', phase + Math.PI, legs?.R, 0),
+    headYaw: { angle: -0.05 * step },
+    headPitch: { angle: -roll * 0.6 },
+    ...leg('L', phase, legs?.L, rise('L') + bob),
+    ...leg('R', phase + Math.PI, legs?.R, rise('R') + bob),
   };
 }
 /** How long each action runs, in seconds: long enough to read, short enough to loop. */
