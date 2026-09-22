@@ -233,30 +233,36 @@ function save() {
     $('#save-status').textContent = '自动保存不可用，请导出方案';
   }
 }
+function partRow(p: Manifest['parts'][number]) {
+  const finish = state.palette.parts[p.id];
+  return `<button class="part-row ${selected === p.id ? 'selected' : ''}" data-part="${p.id}" aria-pressed="${selected === p.id}"><span class="part-swatch" style="background:${finish.color}"></span><span>${escape(p.name)}</span>${finish.stockId ? '<small class="linked">联动</small>' : ''}${!p.printable ? '<small>硬件</small>' : ''}</button>`;
+}
+function assemblyGroups(parts: Manifest['parts']) {
+  return [...new Set(parts.map((p) => p.assembly))]
+    .map(
+      (a) =>
+        `<details open><summary>${escape(a)}<span>${parts.filter((p) => p.assembly === a).length}</span></summary>${parts
+          .filter((p) => p.assembly === a)
+          .map(partRow)
+          .join('')}</details>`,
+    )
+    .join('');
+}
 function drawList() {
   const q = $<HTMLInputElement>('#search').value.trim().toLowerCase();
-  const parts = model.parts.filter(
-    (p) =>
-      isFitted(p, module) &&
-      (filter === 'all' || p.printable) &&
-      [p.name, t(p.name), p.id, p.assembly, t(p.assembly)].join(' ').toLowerCase().includes(q),
-  );
+  const matches = (p: Manifest['parts'][number]) =>
+    (filter === 'all' || p.printable) &&
+    [p.name, t(p.name), p.id, p.assembly, t(p.assembly)].join(' ').toLowerCase().includes(q);
+  const parts = model.parts.filter((p) => isFitted(p, module) && matches(p));
+  // The other set is not on the duck, but it is part of the scheme: show it aside and dimmed
+  // so the whole palette can be read and edited without wondering where those parts went.
+  const aside = model.parts.filter((p) => !isFitted(p, module) && matches(p));
   $('#part-count').textContent = String(parts.length);
-  const assemblies = [...new Set(parts.map((p) => p.assembly))];
-  $('#part-list').innerHTML = parts.length
-    ? assemblies
-        .map(
-          (a) =>
-            `<details open><summary>${escape(a)}<span>${parts.filter((p) => p.assembly === a).length}</span></summary>${parts
-              .filter((p) => p.assembly === a)
-              .map(
-                (p) =>
-                  `<button class="part-row ${selected === p.id ? 'selected' : ''}" data-part="${p.id}" aria-pressed="${selected === p.id}"><span class="part-swatch" style="background:${state.palette.parts[p.id].color}"></span><span>${escape(p.name)}</span>${state.palette.parts[p.id].stockId ? '<small class="linked">联动</small>' : ''}${!p.printable ? '<small>硬件</small>' : ''}</button>`,
-              )
-              .join('')}</details>`,
-        )
-        .join('')
-    : '<div class="empty">没有找到匹配零件</div>';
+  $('#part-list').innerHTML =
+    (parts.length ? assemblyGroups(parts) : '<div class="empty">没有找到匹配零件</div>') +
+    (aside.length
+      ? `<details class="part-aside"><summary>${t('未安装')} · ${t(module === 'skate' ? '步行脚' : '轮滑模组')}<span>${aside.length}</span></summary>${assemblyGroups(aside)}</details>`
+      : '');
 }
 function select(id: string) {
   if (!id) {

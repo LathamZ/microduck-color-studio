@@ -251,6 +251,21 @@ hr {
   padding: 17px 4px 10px;
   list-style: none;
 }
+/* The module that is not fitted: still listed and still editable, but plainly not on the duck. */
+.part-list .part-aside {
+  margin-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.part-list .part-aside summary {
+  color: #a7b0a8;
+}
+.part-list .part-aside .part-row {
+  opacity: 0.55;
+}
+.part-list .part-aside .part-row.selected,
+.part-list .part-aside .part-row:hover {
+  opacity: 1;
+}
 .part-list summary:before {
   content: '⌄';
   margin-right: 8px;
