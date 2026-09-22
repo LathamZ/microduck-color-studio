@@ -7,7 +7,7 @@
   "license": "CC-BY-NC-SA-4.0",
   "source": "https://github.com/pollen-robotics/microduck_rl",
   "upstreamRevision": "2fa62b8",
-  "geometryNote": "Display geometry derived from the original XL330 simulation assembly; not an HD1910 manufacturing or fit reference. Original face count retained for visual fidelity. Optional roller skates are not included.",
+  "geometryNote": "Display geometry derived from the original XL330 simulation assembly; not an HD1910 manufacturing or fit reference. Original face count retained for visual fidelity. The roller-skate module is included and swapped in from the top bar.",
   "bounds": [
     [
       -51.777099609375,
@@ -21,7 +21,7 @@
     ]
   ],
   "geometryUrl": "microduck.glb",
-  "uiNote": "原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。",
+  "uiNote": "原版 XL330 步行装配，可切换轮滑模组。HD1910 改件尺寸不在此预览中。",
   "colorGroups": [
     {
       "id": "primary",
@@ -683,7 +683,8 @@
           -29.255
         ]
       ],
-      "paintable": false
+      "paintable": false,
+      "module": "walk"
     },
     {
       "id": "06-02-foot_left",
@@ -710,7 +711,8 @@
           -29.881
         ]
       ],
-      "paintable": false
+      "paintable": false,
+      "module": "walk"
     },
     {
       "id": "06-03-seeed_bearing__configuration_default",
@@ -737,7 +739,8 @@
           -32.3
         ]
       ],
-      "paintable": false
+      "paintable": false,
+      "module": "walk"
     },
     {
       "id": "06-04-ankle_left",
@@ -764,7 +767,8 @@
           -30.164
         ]
       ],
-      "paintable": false
+      "paintable": false,
+      "module": "walk"
     },
     {
       "id": "07-01-neck",
@@ -1844,7 +1848,8 @@
           69.654
         ]
       ],
-      "paintable": false
+      "paintable": false,
+      "module": "walk"
     },
     {
       "id": "15-02-sole_right",
@@ -1871,7 +1876,8 @@
           70.354
         ]
       ],
-      "paintable": false
+      "paintable": false,
+      "module": "walk"
     },
     {
       "id": "15-03-seeed_bearing__configuration_default",
@@ -1898,7 +1904,8 @@
           35.3
         ]
       ],
-      "paintable": false
+      "paintable": false,
+      "module": "walk"
     },
     {
       "id": "15-04-foot_right",
@@ -1925,7 +1932,344 @@
           69.966
         ]
       ],
-      "paintable": false
+      "paintable": false,
+      "module": "walk"
+    },
+    {
+      "id": "16-01-ankle_l_v1",
+      "name": "轮滑脚踝左",
+      "sourceName": "ankle_l_v1",
+      "assembly": "左踝脚（轮滑）",
+      "assemblyId": "16",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 3,
+      "defaultColor": "#F28C28",
+      "triangles": 4718,
+      "bounds": [
+        [
+          -47.738,
+          -97.7,
+          -69.654
+        ],
+        [
+          -1.24,
+          -72.3,
+          -30.165
+        ]
+      ],
+      "paintable": true,
+      "module": "skate"
+    },
+    {
+      "id": "16-02-roller_blade",
+      "name": "轮滑刀架左",
+      "sourceName": "roller_blade",
+      "assembly": "左踝脚（轮滑）",
+      "assemblyId": "16",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "primary",
+      "printable": true,
+      "plate": 1,
+      "defaultColor": "#F1EFE7",
+      "triangles": 20968,
+      "bounds": [
+        [
+          -61.277,
+          -117.998,
+          -70.071
+        ],
+        [
+          11.723,
+          -87.619,
+          -29.529
+        ]
+      ],
+      "paintable": true,
+      "module": "skate"
+    },
+    {
+      "id": "16-03-rim",
+      "name": "轮辋左前",
+      "sourceName": "rim",
+      "assembly": "左踝脚（轮滑）",
+      "assemblyId": "16",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 3,
+      "defaultColor": "#F28C28",
+      "triangles": 2304,
+      "bounds": [
+        [
+          -2.377,
+          -124.1,
+          -53.6
+        ],
+        [
+          17.823,
+          -103.9,
+          -46.0
+        ]
+      ],
+      "paintable": true,
+      "module": "skate"
+    },
+    {
+      "id": "16-04-tire",
+      "name": "轮胎左前",
+      "sourceName": "tire",
+      "assembly": "左踝脚（轮滑）",
+      "assemblyId": "16",
+      "defaultMaterial": "tpu",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 5,
+      "defaultColor": "#30343B",
+      "triangles": 7056,
+      "bounds": [
+        [
+          -7.277,
+          -129.0,
+          -53.6
+        ],
+        [
+          22.723,
+          -99.0,
+          -46.0
+        ]
+      ],
+      "paintable": false,
+      "module": "skate"
+    },
+    {
+      "id": "16-05-rim",
+      "name": "轮辋左后",
+      "sourceName": "rim",
+      "assembly": "左踝脚（轮滑）",
+      "assemblyId": "16",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 3,
+      "defaultColor": "#F28C28",
+      "triangles": 2304,
+      "bounds": [
+        [
+          -67.377,
+          -124.1,
+          -53.6
+        ],
+        [
+          -47.177,
+          -103.9,
+          -46.0
+        ]
+      ],
+      "paintable": true,
+      "module": "skate"
+    },
+    {
+      "id": "16-06-tire",
+      "name": "轮胎左后",
+      "sourceName": "tire",
+      "assembly": "左踝脚（轮滑）",
+      "assemblyId": "16",
+      "defaultMaterial": "tpu",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 5,
+      "defaultColor": "#30343B",
+      "triangles": 7056,
+      "bounds": [
+        [
+          -72.277,
+          -129.0,
+          -53.6
+        ],
+        [
+          -42.277,
+          -99.0,
+          -46.0
+        ]
+      ],
+      "paintable": false,
+      "module": "skate"
+    },
+    {
+      "id": "17-01-ankle_r_v1",
+      "name": "轮滑脚踝右",
+      "sourceName": "ankle_r_v1",
+      "assembly": "右踝脚（轮滑）",
+      "assemblyId": "17",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 3,
+      "defaultColor": "#F28C28",
+      "triangles": 4714,
+      "bounds": [
+        [
+          -47.738,
+          -97.7,
+          30.164
+        ],
+        [
+          -1.24,
+          -72.3,
+          69.654
+        ]
+      ],
+      "paintable": true,
+      "module": "skate"
+    },
+    {
+      "id": "17-02-roller_blade",
+      "name": "轮滑刀架右",
+      "sourceName": "roller_blade",
+      "assembly": "右踝脚（轮滑）",
+      "assemblyId": "17",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "primary",
+      "printable": true,
+      "plate": 1,
+      "defaultColor": "#F1EFE7",
+      "triangles": 20968,
+      "bounds": [
+        [
+          -61.277,
+          -117.998,
+          29.747
+        ],
+        [
+          11.723,
+          -87.619,
+          70.289
+        ]
+      ],
+      "paintable": true,
+      "module": "skate"
+    },
+    {
+      "id": "17-03-rim",
+      "name": "轮辋右前",
+      "sourceName": "rim",
+      "assembly": "右踝脚（轮滑）",
+      "assemblyId": "17",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 3,
+      "defaultColor": "#F28C28",
+      "triangles": 2304,
+      "bounds": [
+        [
+          -2.377,
+          -124.1,
+          46.218
+        ],
+        [
+          17.823,
+          -103.9,
+          53.818
+        ]
+      ],
+      "paintable": true,
+      "module": "skate"
+    },
+    {
+      "id": "17-04-tire",
+      "name": "轮胎右前",
+      "sourceName": "tire",
+      "assembly": "右踝脚（轮滑）",
+      "assemblyId": "17",
+      "defaultMaterial": "tpu",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 5,
+      "defaultColor": "#30343B",
+      "triangles": 7056,
+      "bounds": [
+        [
+          -7.277,
+          -129.0,
+          46.218
+        ],
+        [
+          22.723,
+          -99.0,
+          53.818
+        ]
+      ],
+      "paintable": false,
+      "module": "skate"
+    },
+    {
+      "id": "17-05-rim",
+      "name": "轮辋右后",
+      "sourceName": "rim",
+      "assembly": "右踝脚（轮滑）",
+      "assemblyId": "17",
+      "defaultMaterial": "pla",
+      "metalness": 0,
+      "role": "accent",
+      "printable": true,
+      "plate": 3,
+      "defaultColor": "#F28C28",
+      "triangles": 2304,
+      "bounds": [
+        [
+          -67.377,
+          -124.1,
+          46.218
+        ],
+        [
+          -47.177,
+          -103.9,
+          53.818
+        ]
+      ],
+      "paintable": true,
+      "module": "skate"
+    },
+    {
+      "id": "17-06-tire",
+      "name": "轮胎右后",
+      "sourceName": "tire",
+      "assembly": "右踝脚（轮滑）",
+      "assemblyId": "17",
+      "defaultMaterial": "tpu",
+      "metalness": 0,
+      "role": "structure",
+      "printable": true,
+      "plate": 5,
+      "defaultColor": "#30343B",
+      "triangles": 7056,
+      "bounds": [
+        [
+          -72.277,
+          -129.0,
+          46.218
+        ],
+        [
+          -42.277,
+          -99.0,
+          53.818
+        ]
+      ],
+      "paintable": false,
+      "module": "skate"
     }
   ],
   "sourceTriangles": 796792,
@@ -1958,5 +2302,6 @@
     ]
   },
   "mobileGeometryUrl": "microduck-mobile.glb",
-  "mobileDisplayTriangles": 301594
+  "mobileDisplayTriangles": 301594,
+  "rollerGeometryUrl": "microduck-rollers.glb"
 }

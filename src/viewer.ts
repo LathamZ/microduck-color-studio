@@ -6,6 +6,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   ELEVATION_RANGE,
+  isFitted,
+  partModule,
+  type ModuleName,
   type LightPattern,
   type LightPreset,
   type Lighting,
@@ -406,6 +409,10 @@ export class Viewer {
   private blendClock = 0;
   private stopping = false;
   private selected: string | null = null;
+  /** Which set of feet is fitted: the model stands as built, or on its clip-on skates. */
+  private module: ModuleName = 'walk';
+  private isolated: string | null = null;
+  private hardwareVisible = true;
   private down = { x: 0, y: 0 };
   private size = 300;
   private center = new THREE.Vector3();
@@ -565,31 +572,9 @@ export class Viewer {
     animate();
   }
   async load(url: string) {
-    const gltf = await new GLTFLoader().loadAsync(url);
-    const known = new Set(this.model.parts.map((p) => p.id));
-    gltf.scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        if (!known.has(obj.name)) throw new Error(`模型节点未登记：${obj.name}`);
-        const originalGeometry = obj.geometry;
-        if (this.mobile) {
-          if (!obj.geometry.getAttribute('normal')) obj.geometry.computeVertexNormals();
-        } else {
-          obj.geometry = toCreasedNormals(obj.geometry, 0.45);
-          if (obj.geometry !== originalGeometry) originalGeometry.dispose();
-        }
-        obj.material = new THREE.MeshPhysicalMaterial({ color: '#ffffff' });
-        obj.castShadow = true;
-        obj.receiveShadow = true;
-        this.meshes.set(obj.name, obj);
-        this.origins.set(obj.name, obj.position.clone());
-        const center = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
-        this.explodeVectors.set(obj.name, center.clone());
-        obj.updateMatrix();
-        this.restMatrices.set(obj.name, obj.matrix.clone());
-      }
-    });
-    if (this.meshes.size !== known.size) throw new Error('几何与零件清单不一致');
-    this.group.add(gltf.scene);
+    // The base file carries everything that is not a swap-in module.
+    const gltf = await this.fetchModule(url, null);
+    void gltf;
     this.buildRig();
     this.buildLightHint();
     const bounds = new THREE.Box3().setFromObject(this.group);
@@ -639,6 +624,40 @@ export class Viewer {
       mat.needsUpdate = true;
     }
   }
+  /** Fetch one module's geometry and register it. Nothing is shown until it is fitted. */
+  private async fetchModule(url: string, module: ModuleName | null) {
+    const gltf = await new GLTFLoader().loadAsync(url);
+    // The base file carries everything that is on the duck as it stands, feet included.
+    const known = module
+      ? this.moduleIds(module)
+      : new Set(this.model.parts.filter((p) => isFitted(p, 'walk')).map((p) => p.id));
+    let found = 0;
+    gltf.scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        if (!known.has(obj.name)) throw new Error(`模型节点未登记：${obj.name}`);
+        const originalGeometry = obj.geometry;
+        if (this.mobile) {
+          if (!obj.geometry.getAttribute('normal')) obj.geometry.computeVertexNormals();
+        } else {
+          obj.geometry = toCreasedNormals(obj.geometry, 0.45);
+          if (obj.geometry !== originalGeometry) originalGeometry.dispose();
+        }
+        obj.material = new THREE.MeshPhysicalMaterial({ color: '#ffffff' });
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+        obj.visible = false;
+        this.meshes.set(obj.name, obj);
+        this.origins.set(obj.name, obj.position.clone());
+        const center = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
+        this.explodeVectors.set(obj.name, center.clone());
+        obj.updateMatrix();
+        this.restMatrices.set(obj.name, obj.matrix.clone());
+        found++;
+      }
+    });
+    if (found !== known.size) throw new Error('几何与零件清单不一致');
+    this.group.add(gltf.scene);
+  }
   /**
    * Group the meshes into joints and derive each hinge from the parts' rest bounds. Joints are
    * a flat list whose parents come first, so poses are applied top-down.
@@ -656,16 +675,14 @@ export class Viewer {
         .map((part) => part.id)
         .filter((id) => this.meshes.has(id));
       if (!ids.length) continue;
-      // The horn is where the robot can actually rotate; without it, leave the joint out.
-      const servo = this.meshes.get(spec.servo);
+      // A driven joint turns about its servo's horn, which is where the robot can actually
+      // rotate; a free one states its own hinge. Without either, leave the joint out.
+      const servo = spec.servo ? this.meshes.get(spec.servo) : null;
       const horn = servo ? servoHorn(servo) : null;
-      if (!horn) continue;
-      this.joints.set(spec.id, {
-        axis: horn.axis,
-        pivot: horn.point,
-        parent: spec.parent,
-        ids: [],
-      });
+      const axis = horn?.axis ?? (spec.axis ? new THREE.Vector3(...spec.axis) : null);
+      const pivot = horn?.point ?? (spec.pivot ? new THREE.Vector3(...spec.pivot) : null);
+      if (!axis || !pivot) continue;
+      this.joints.set(spec.id, { axis, pivot, parent: spec.parent, ids: [] });
       // A part named by a later joint leaves the joint that claimed it first.
       for (const id of ids) claimed.set(id, spec.id);
     }
@@ -705,9 +722,16 @@ export class Viewer {
     this.jointOrder = [...this.joints.keys()].sort((a, b) => depth(a) - depth(b));
     this.legs = this.measureLegs();
   }
+  /** Every part hanging off a joint, itself included: the ankle, its blade and its wheels. */
+  private below(id: JointName): string[] {
+    const out = [...(this.joints.get(id)?.ids || [])];
+    for (const [child, joint] of this.joints)
+      if (joint.parent === id) out.push(...this.below(child));
+    return out;
+  }
   /**
    * The linkage the IK needs, straight from the measured pivots: hip → knee → ankle in the
-   * sagittal plane, and how far the sole hangs below the ankle.
+   * sagittal plane, and how far whatever is fitted below the ankle hangs under it.
    */
   private measureLegs(): { L: LegGeometry; R: LegGeometry } | null {
     const build = (side: 'L' | 'R'): LegGeometry | null => {
@@ -715,12 +739,11 @@ export class Viewer {
       const knee = this.joints.get(`knee${side}` as JointName);
       const ankle = this.joints.get(`ankle${side}` as JointName);
       if (!hip || !knee || !ankle) return null;
-      const soleParts = this.model.parts.filter(
-        (p) => p.assemblyId === (side === 'L' ? '左踝脚' : '右踝脚'),
-      );
+      // Whatever is fitted below the ankle — a foot, or a blade and its wheels — is what the
+      // duck stands on, so that is what sets the ground.
       const box = new THREE.Box3();
-      for (const part of soleParts) {
-        const mesh = this.meshes.get(part.id);
+      for (const id of this.below(`ankle${side}` as JointName)) {
+        const mesh = this.meshes.get(id);
         if (mesh) box.expandByObject(mesh);
       }
       const soleBottom = box.isEmpty() ? ankle.pivot.y - 25 : box.min.y;
@@ -961,6 +984,44 @@ export class Viewer {
       parts: [...joint.ids],
     }));
   }
+  /**
+   * Who is on screen. Everything that hides meshes comes through here, so the fitted module,
+   * an isolated part and the hardware toggle cannot disagree — and a module that has not been
+   * fetched yet simply has no meshes to show.
+   */
+  private applyVisibility() {
+    for (const part of this.model.parts) {
+      const mesh = this.meshes.get(part.id);
+      if (!mesh) continue;
+      mesh.visible =
+        isFitted(part, this.module) &&
+        (!this.isolated || part.id === this.isolated) &&
+        (part.printable || this.hardwareVisible);
+    }
+  }
+  /** Fit the other set of feet. The skates are fetched the first time they are asked for. */
+  async setModule(name: ModuleName) {
+    if (name === 'skate' && this.model.rollerGeometryUrl && !this.hasModule('skate')) {
+      await this.fetchModule(this.model.rollerGeometryUrl, 'skate');
+      this.buildRig();
+    }
+    this.module = name;
+    // The ankle's own geometry decides where the ground is: skates stand taller than feet.
+    this.legs = this.measureLegs();
+    this.applyVisibility();
+    this.select(this.selected);
+    this.restage();
+  }
+  get moduleName() {
+    return this.module;
+  }
+  private hasModule(name: ModuleName) {
+    return this.model.parts.some((p) => partModule(p) === name && this.meshes.has(p.id));
+  }
+  /** Parts of one module: what the geometry fetch expects to find in its file. */
+  private moduleIds(name: ModuleName) {
+    return new Set(this.model.parts.filter((p) => partModule(p) === name).map((p) => p.id));
+  }
   select(id: string | null) {
     this.selected = id;
     const m = id ? this.meshes.get(id) : null;
@@ -968,12 +1029,14 @@ export class Viewer {
     if (m) this.box.setFromObject(m);
   }
   isolate(id: string | null) {
-    for (const [key, m] of this.meshes) m.visible = !id || key === id;
+    this.isolated = id;
+    this.applyVisibility();
     this.select(this.selected);
     this.restage();
   }
   hardware(visible: boolean) {
-    for (const p of this.model.parts) if (!p.printable) this.meshes.get(p.id)!.visible = visible;
+    this.hardwareVisible = visible;
+    this.applyVisibility();
     this.select(this.selected);
     this.restage();
   }

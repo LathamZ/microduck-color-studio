@@ -23,7 +23,10 @@ export type MotionJointSpec = {
   /** Single parts picked by source name. */
   sourceNames?: string[];
   /** Manifest id of the servo that drives this joint; its horn is the axis. */
-  servo: string;
+  servo?: string;
+  /** A joint nothing drives — a free-spinning skate wheel — states its own hinge. */
+  axis?: [number, number, number];
+  pivot?: [number, number, number];
 };
 export const motionJoints: MotionJointSpec[] = [
   { id: 'neckBase', parent: 'root', assemblies: ['颈根'], servo: '07-02-xl330' },
@@ -43,10 +46,41 @@ export const motionJoints: MotionJointSpec[] = [
   { id: 'splayL', parent: 'turnL', assemblies: ['左髋roll'], servo: '02-02-xl330' },
   { id: 'hipL', parent: 'splayL', assemblies: ['左大腿'], servo: '04-05-xl330' },
   { id: 'kneeL', parent: 'hipL', assemblies: ['左小腿'], servo: '04-02-xl330' },
-  { id: 'ankleL', parent: 'kneeL', assemblies: ['左踝脚'], servo: '05-02-xl330' },
+  { id: 'ankleL', parent: 'kneeL', assemblies: ['左踝脚', '左踝脚（轮滑）'], servo: '05-02-xl330' },
   { id: 'turnR', parent: 'root', assemblies: ['右髋yaw-roll'], servo: '01-08-xl330' },
   { id: 'splayR', parent: 'turnR', assemblies: ['右髋roll'], servo: '11-02-xl330' },
   { id: 'hipR', parent: 'splayR', assemblies: ['右大腿'], servo: '13-05-xl330' },
   { id: 'kneeR', parent: 'hipR', assemblies: ['右小腿'], servo: '13-01-xl330' },
-  { id: 'ankleR', parent: 'kneeR', assemblies: ['右踝脚'], servo: '14-01-xl330' },
+  { id: 'ankleR', parent: 'kneeR', assemblies: ['右踝脚', '右踝脚（轮滑）'], servo: '14-01-xl330' },
+  // The skates' four wheels have nothing driving them: they spin on their axles, so they say
+  // where they turn instead of naming a servo. Pivots are the wheel centres, measured from the
+  // roller module's own parts.
+  {
+    id: 'wheelLF',
+    parent: 'ankleL',
+    assemblies: ['16'],
+    axis: [0, 0, 1],
+    pivot: [7.72, -114, -49.8],
+  },
+  {
+    id: 'wheelLR',
+    parent: 'ankleL',
+    assemblies: ['16'],
+    axis: [0, 0, 1],
+    pivot: [-57.28, -114, -49.8],
+  },
+  {
+    id: 'wheelRF',
+    parent: 'ankleR',
+    assemblies: ['17'],
+    axis: [0, 0, 1],
+    pivot: [7.72, -114, 49.8],
+  },
+  {
+    id: 'wheelRR',
+    parent: 'ankleR',
+    assemblies: ['17'],
+    axis: [0, 0, 1],
+    pivot: [-57.28, -114, 49.8],
+  },
 ];

@@ -49,7 +49,16 @@ export type Part = {
   defaultMaterial: MaterialKind;
   metalness: number;
   paintable?: boolean;
+  /** Swap-in module this part belongs to; unset means the model as it stands. */
+  module?: ModuleName;
 };
+/** The duck ships with feet and with clip-on skates; only one of them is fitted at a time. */
+export const MODULES = ['walk', 'skate'] as const;
+export type ModuleName = (typeof MODULES)[number];
+/** Which swap-in module a part belongs to, or undefined for the parts every configuration has. */
+export const partModule = (part: Part): ModuleName | undefined => part.module;
+/** Whether this part is on the duck in the given configuration. */
+export const isFitted = (part: Part, module: ModuleName) => !part.module || part.module === module;
 export type Manifest = {
   schemaVersion: number;
   modelId: string;
@@ -60,6 +69,8 @@ export type Manifest = {
   parts: Part[];
   displayTriangles: number;
   geometryUrl: string;
+  /** Geometry for the roller module, fetched only when someone switches to skates. */
+  rollerGeometryUrl?: string;
   mobileGeometryUrl?: string;
   mobileDisplayTriangles?: number;
   uiNote: string;

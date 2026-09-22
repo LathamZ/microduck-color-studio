@@ -143,8 +143,8 @@ export const english: Record<string, string> = {
   '模拟 0.4 mm 打印层纹': 'Simulate 0.4 mm layer lines',
   '光泽与层纹为近似模拟，非耗材实测；层纹按装配竖直方向展示。':
     'Approximate gloss and layers, not filament measurements. Layers follow the assembly vertical axis.',
-  '原版 XL330 步行模型。HD1910 改件尺寸与轮滑件不在此预览中。':
-    'Original XL330 walking assembly. HD1910-specific geometry and roller skates are not included.',
+  '原版 XL330 步行装配，可切换轮滑模组。HD1910 改件尺寸不在此预览中。':
+    'Original XL330 walking assembly, with the roller module a click away. HD1910-specific geometry is not included.',
   装配视图: 'Assembly view',
   零件展开: 'Explode parts',
   显示舵机与电子零件: 'Show servos & electronics',
@@ -500,7 +500,15 @@ export const english: Record<string, string> = {
   '循环播放（默认）': 'Play the loop (default)',
   循环播放全部动作: 'Playing the full action loop',
   '动作：': 'Action: ',
+  脚部模组: 'Foot module',
+  步行: 'Feet',
+  轮滑: 'Skates',
+  已换上轮滑模组: 'Roller skates fitted',
+  已换回步行脚: 'Back on its feet',
+  '轮滑模组载入失败：': 'Could not load the roller module: ',
   走路: 'Walk',
+  滑行: 'Skating',
+  装上或拆下轮滑模组: 'Fit or remove the roller skates',
   坐下站起: 'Sit & stand',
   踢一下: 'Kick',
   叼一口: 'Scoop',

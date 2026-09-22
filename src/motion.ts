@@ -4,7 +4,17 @@
  * thing on the robot that can actually turn. `src/models/active.ts` says which servo drives
  * which parts; `src/viewer.ts` measures the horns and applies the angles.
  */
-export const MOTIONS = ['walk', 'sit', 'kick', 'grab', 'recover', 'shake', 'tilt', 'beak'] as const;
+export const MOTIONS = [
+  'walk',
+  'skate',
+  'sit',
+  'kick',
+  'grab',
+  'recover',
+  'shake',
+  'tilt',
+  'beak',
+] as const;
 export type MotionName = (typeof MOTIONS)[number];
 export type JointName =
   | 'root'
@@ -22,7 +32,11 @@ export type JointName =
   | 'kneeL'
   | 'kneeR'
   | 'ankleL'
-  | 'ankleR';
+  | 'ankleR'
+  | 'wheelLF'
+  | 'wheelLR'
+  | 'wheelRF'
+  | 'wheelRR';
 /**
  * `angle` is radians about the joint's servo horn, positive following the right-hand rule
  * around the horn axis. The trunk has no servo of its own, so it also takes euler `x/y/z`
@@ -358,6 +372,58 @@ export function recover(t: number, legs?: Legs): Pose {
     ...legAt('R', [air - 9 * struggle, -5 * struggle], legs?.R),
   };
 }
+/** One skate stride, in seconds. */
+export const SKATE_PERIOD = 1.7;
+/**
+ * Skating: the duck rolls on its wheels and pushes off with one leg at a time, carrying its
+ * weight over the leg that is gliding. Nothing steps — the wheels do the travelling — so a
+ * foot only slides back under the body to push, then comes forward again just clear of the
+ * floor the way a skater picks a foot up to bring it round. The wheels turn the whole time,
+ * and the body rocks as it does when it waddles, without the lift of a step.
+ */
+export function skate(t: number, legs?: Legs): Pose {
+  const phase = (t / SKATE_PERIOD) * TAU;
+  const lean = Math.cos(phase);
+  const roll = 0.12 * lean;
+  const shift = 7 * lean;
+  const bob = -1.2 * Math.cos(2 * phase);
+  const half = legs ? (legs.L.hipOffset + legs.R.hipOffset) / 2 : 0;
+  const rise = (side: 'L' | 'R') => Math.sin(roll) * half * (side === 'L' ? 1 : -1);
+  const DRAG_ARM = PIVOT[1] - GROUND;
+  const LEG = HIP_Y - GROUND;
+  const kneeFix = (shift - DRAG_ARM * Math.sin(roll)) / LEG;
+  /** One skate: pushing slides it back under the body, the return carries it forward again. */
+  const stride = (side: 'L' | 'R'): Vec2 => {
+    const u = (((phase / TAU) % 1) + 1) % 1;
+    const v = side === 'L' ? u : (u + 0.5) % 1;
+    if (v < 0.55) return [14 - 46 * (v / 0.55), 0];
+    const back = (v - 0.55) / 0.45;
+    return [-32 + 46 * smooth(back), 6 * Math.sin(Math.PI * back)];
+  };
+  const skateFoot = (side: 'L' | 'R') => {
+    const [x, y] = stride(side);
+    return legAt(side, [x, y], side === 'L' ? legs?.L : legs?.R, rise(side) + bob);
+  };
+  // The wheels turn as the duck travels; an in-place loop just keeps turning them.
+  const wheel = -t * 11;
+  return {
+    root: { x: roll, dz: shift, dy: bob },
+    turnL: { angle: 0.09 * lean },
+    turnR: { angle: -0.09 * lean },
+    splayL: { angle: kneeFix },
+    splayR: { angle: -kneeFix },
+    neckBase: { angle: 0 },
+    neckPitch: { angle: 0 },
+    headYaw: { angle: 0.04 * Math.sin(phase) },
+    headPitch: { angle: -roll * 0.6 },
+    ...skateFoot('L'),
+    ...skateFoot('R'),
+    wheelLF: { angle: wheel },
+    wheelLR: { angle: wheel },
+    wheelRF: { angle: wheel },
+    wheelRR: { angle: wheel },
+  };
+}
 /** Two quick head turns, easing in and out. */
 export function shake(t: number): Pose {
   const envelope = Math.sin((t / 2.4) * Math.PI) ** 0.5;
@@ -398,6 +464,7 @@ export function beak(t: number): Pose {
 export type Legs = { L: LegGeometry; R: LegGeometry };
 export const motionPoses: Record<MotionName, (t: number, legs?: Legs) => Pose> = {
   walk,
+  skate,
   sit,
   kick,
   grab,
@@ -408,6 +475,7 @@ export const motionPoses: Record<MotionName, (t: number, legs?: Legs) => Pose> =
 };
 export const MOTION_LABELS: Record<MotionName, string> = {
   walk: '走路',
+  skate: '滑行',
   sit: '坐下站起',
   kick: '踢一下',
   grab: '叼一口',

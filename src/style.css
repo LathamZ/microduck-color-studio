@@ -656,6 +656,19 @@ hr {
   color: #829180;
   width: 14px;
 }
+/* Feet or skates: one more button on the view row, set off by a divider. */
+.view-controls .module-toggle {
+  margin-left: 10px;
+  padding-left: 14px;
+  border-left: 1px solid #d9e0d5;
+}
+.view-controls .module-toggle.active {
+  background: var(--accent);
+  color: #fff;
+}
+.view-controls .module-toggle:disabled {
+  opacity: 0.5;
+}
 .segmented {
   display: flex;
   gap: 3px;

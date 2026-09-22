@@ -15,3 +15,14 @@ The preview contains original XL330 visual geometry, not a newly engineered HD19
 ## Application
 
 Original application code, tests, CLI and documentation in this repository are Apache-2.0. Three.js is MIT; Lucide is ISC; tooling retains its respective licenses. Model licenses are separate from the application's open-source license.
+
+## Roller-skate module
+
+`public/models/microduck-rollers.glb` holds the roller variant's swap-in parts: the roller
+ankles (`ankle_l_v1`, `ankle_r_v1`), the blade (`roller_blade`), and four wheels (four `rim`,
+four `tire`). The meshes come from the same original assembly as the rest of the model, and
+each part's placement is the official simulator's own, taken from the rollers variant of
+`pollen-robotics/microduck_rl` (mirrored at `boris721/microduck-3d`). Rebuild them with
+`python scripts/build_rollers.py /path/to/microduck-replica`.
+
+Geometry, derived metadata and renders remain **CC BY-NC-SA 4.0**, as above.
