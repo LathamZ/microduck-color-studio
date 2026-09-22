@@ -657,8 +657,11 @@ hr {
   width: 14px;
 }
 /* Feet or skates: its own group beside the view buttons, not part of them. */
-.module-controls {
-  margin-left: 6px;
+/* The two control groups travel together on the left of the row, a few pixels apart. */
+.stage-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .module-controls button.active {
   background: var(--accent);
