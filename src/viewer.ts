@@ -665,13 +665,18 @@ export class Viewer {
   private buildRig() {
     const claimed = new Map<string, JointName>();
     for (const spec of motionJoints) {
+      // A spec can narrow by assembly, by source name, or both: an empty list means "any".
+      // A spec can narrow by assembly, by source name, or list the exact parts it drives.
       const ids = this.model.parts
-        .filter(
-          (part) =>
+        .filter((part) => {
+          if (spec.ids) return spec.ids.includes(part.id);
+          const byAssembly =
+            !spec.assemblies?.length ||
             spec.assemblies.includes(part.assemblyId) ||
-            spec.assemblies.includes(part.assembly) ||
-            spec.sourceNames?.includes(part.sourceName),
-        )
+            spec.assemblies.includes(part.assembly);
+          const byName = !spec.sourceNames?.length || spec.sourceNames.includes(part.sourceName);
+          return byAssembly && byName;
+        })
         .map((part) => part.id)
         .filter((id) => this.meshes.has(id));
       if (!ids.length) continue;

@@ -19,9 +19,11 @@ export type MotionJointSpec = {
   id: JointName;
   parent: JointName | 'root';
   /** Manifest assemblies whose parts follow this joint. */
-  assemblies: string[];
+  assemblies?: string[];
   /** Single parts picked by source name. */
   sourceNames?: string[];
+  /** Single parts named outright, for joints that share an assembly with another. */
+  ids?: string[];
   /** Manifest id of the servo that drives this joint; its horn is the axis. */
   servo?: string;
   /** A joint nothing drives — a free-spinning skate wheel — states its own hinge. */
@@ -58,28 +60,32 @@ export const motionJoints: MotionJointSpec[] = [
   {
     id: 'wheelLF',
     parent: 'ankleL',
-    assemblies: ['16'],
+    assemblies: [],
+    ids: ['16-03-rim', '16-04-tire'],
     axis: [0, 0, 1],
     pivot: [7.72, -114, -49.8],
   },
   {
     id: 'wheelLR',
     parent: 'ankleL',
-    assemblies: ['16'],
+    assemblies: [],
+    ids: ['16-05-rim', '16-06-tire'],
     axis: [0, 0, 1],
     pivot: [-57.28, -114, -49.8],
   },
   {
     id: 'wheelRF',
     parent: 'ankleR',
-    assemblies: ['17'],
+    assemblies: [],
+    ids: ['17-03-rim', '17-04-tire'],
     axis: [0, 0, 1],
     pivot: [7.72, -114, 49.8],
   },
   {
     id: 'wheelRR',
     parent: 'ankleR',
-    assemblies: ['17'],
+    assemblies: [],
+    ids: ['17-05-rim', '17-06-tire'],
     axis: [0, 0, 1],
     pivot: [-57.28, -114, 49.8],
   },

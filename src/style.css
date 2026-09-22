@@ -658,7 +658,7 @@ hr {
 }
 /* Feet or skates: its own group beside the view buttons, not part of them. */
 .module-controls {
-  margin-left: 10px;
+  margin-left: 6px;
 }
 .module-controls button.active {
   background: var(--accent);
