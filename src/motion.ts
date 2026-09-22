@@ -163,6 +163,32 @@ function arc(t: number, rise: number, hold: number, fall: number): number {
   if (t < rise + hold) return 1;
   return 1 - smooth((t - rise - hold) / fall);
 }
+/** The trunk's pivot in the model frame: what a whole-body lean turns about. */
+const PIVOT: Vec2 = [-6.2, -1];
+/** The hip's own position, where every solved leg hangs from. */
+const HIP_X = 3.9;
+const HIP_Y = -17.5;
+const GROUND = -106.5;
+/**
+ * Put the whole body on the floor: given the angle it has turned to, and the points that could
+ * touch the ground, find the translation that rests the lowest of them on it and keeps that
+ * contact from sliding. A body rolling onto its back pivots on its heels, then its rump, then
+ * its shoulders — the contact moves, so no single fixed pivot can express it.
+ */
+function restOnFloor(angle: number, points: Vec2[]) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const at = (p: Vec2) => PIVOT[1] + (p[0] - PIVOT[0]) * sin + (p[1] - PIVOT[1]) * cos;
+  let lowest = Infinity;
+  let contact = points[0];
+  for (const p of points)
+    if (at(p) < lowest) {
+      lowest = at(p);
+      contact = p;
+    }
+  const rolledX = PIVOT[0] + (contact[0] - PIVOT[0]) * cos - (contact[1] - PIVOT[1]) * sin;
+  return { dx: contact[0] - rolledX, dy: GROUND - lowest };
+}
 /** How much of the cycle a leg spends in the air: 0 while planted, 1 at mid-swing. */
 function swingWeight(phase: number): number {
   return Math.max(0, Math.sin(phase)) ** 0.8;
@@ -192,8 +218,8 @@ export function walk(t: number, legs?: Legs): Pose {
   // open and close against that — the knee rotation a waddling bird uses — so the foot the duck
   // is standing on stays where it put it. `DRAG_ARM` is the roll's lever to the floor, `LEG` the
   // hip's to the foot; the result is about eight degrees either side of the built stance.
-  const DRAG_ARM = 88;
-  const LEG = 71.4;
+  const DRAG_ARM = PIVOT[1] - GROUND;
+  const LEG = HIP_Y - GROUND;
   const kneeFix = (shift - DRAG_ARM * Math.sin(roll)) / LEG;
   return {
     // Roll and sideways travel, both leaning onto the foot that is carrying.
@@ -217,7 +243,7 @@ export function walk(t: number, legs?: Legs): Pose {
 export const SIT_SECONDS = 6.4;
 export const KICK_SECONDS = 2.6;
 export const GRAB_SECONDS = 5.2;
-export const RECOVER_SECONDS = 8.6;
+export const RECOVER_SECONDS = 9.2;
 /**
  * Sit and stand: the trunk settles onto its haunches while the legs fold under it, holds, then
  * pushes back up. The feet never move — the hips come down to them, and the leg servos fold by
@@ -284,27 +310,48 @@ export function grab(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose
     ...legAt('R', [12 * bend, drop], legs?.R),
   };
 }
+export const RECOVER_FALL = 0.8;
+export const RECOVER_ROCK = 4.6;
+export const RECOVER_UP = 1.9;
 /**
- * Knocked flat onto its back, then up again. The body pivots about the point it touches the
- * ground at, which is what keeps the head and legs out of the floor through the roll — a body
- * this tall cannot simply turn about its own middle. Once it is down the legs work the air,
- * and the push back onto the feet is the same roll run backwards.
+ * Knocked onto its back, then up again. Three things make this behave like a body rather than
+ * like a lid on a hinge:
+ *
+ * - it turns about the heel it is standing on — the rearmost thing touching the floor — so that
+ *   contact stays exactly where it is and nothing swings below the ground on the way over;
+ * - the fall accelerates into the floor the way gravity makes it, instead of easing down;
+ * - getting up is the legs reaching for the floor and the body rocking until it carries back
+ *   over, not the fall played backwards.
  */
-export function recover(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose {
-  const down = arc(t, 1.0, 2.9, 2.3);
-  const angle = 1.58 * down;
-  // Rotating about the ground under the trunk: the pivot is the body, the floor is the axis.
-  const reach = -88 * Math.sin(angle);
-  const lift = 88 * (Math.cos(angle) - 1);
+export function recover(t: number, legs?: Legs): Pose {
+  const fall = Math.min(1, (t / RECOVER_FALL) ** 2);
+  const rising =
+    t <= RECOVER_FALL + RECOVER_ROCK ? 0 : smooth((t - RECOVER_FALL - RECOVER_ROCK) / RECOVER_UP);
+  // Rocking, growing and fading across the time it spends down.
+  const window =
+    t > RECOVER_FALL && t < RECOVER_FALL + RECOVER_ROCK
+      ? Math.sin(((t - RECOVER_FALL) / RECOVER_ROCK) * Math.PI)
+      : 0;
+  const rock = 0.14 * window * (1 - rising) * Math.sin((t - RECOVER_FALL) * 3.4);
+  const down = Math.min(1, Math.max(0, fall * (1 - rising) + rock));
+  const angle = 1.52 * down;
   // Legs cycle against thin air while it is down. Once the body is on its back its own
   // "forward" points at the sky, so reaching the feet out ahead is what lifts them up.
   const struggle = down * Math.sin(t * 5.6) ** 2;
-  const air = 42 * down + 13 * struggle;
+  const air = 30 * down + 12 * struggle;
+  const { dx, dy } = restOnFloor(angle, [
+    // Where the feet have been solved to, and the corners of the trunk.
+    [HIP_X + air, GROUND + 7 * struggle],
+    [HIP_X + air - 9 * struggle, GROUND - 5 * struggle],
+    [-47, -39],
+    [-46, 42],
+    [35, -1],
+  ]);
   return {
-    root: { z: angle, dx: reach, dy: lift },
+    root: { z: angle, dx, dy },
     // The neck goes limp on the way over so the head rides up rather than scraping.
-    neckBase: { angle: -0.3 * down - 0.12 * struggle },
-    neckPitch: { angle: -0.26 * down },
+    neckBase: { angle: -0.34 * down - 0.12 * struggle },
+    neckPitch: { angle: -0.3 * down },
     headPitch: { angle: 0.24 * struggle },
     jaw: { angle: -0.22 * struggle },
     ...legAt('L', [air, 7 * struggle], legs?.L),

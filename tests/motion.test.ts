@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   GRAB_SECONDS,
+  RECOVER_SECONDS,
   KICK_SECONDS,
   SIT_SECONDS,
   TILT_SECONDS,
@@ -16,13 +17,13 @@ import {
 const LEG: LegGeometry = {
   hipToKnee: [-35.7, -21.9],
   kneeToAnkle: [0, -42],
-  ankleToSole: 7.6,
+  ankleToSole: 25.1,
   hipOffset: 54.3,
 };
 const LEGS = { L: LEG, R: LEG };
 /** The hip's height in the model, which is where a solved leg hangs from. */
 const HIP_Y = -17.5;
-const GROUND = -89;
+const GROUND = -106.5;
 /** The trunk's pivot, which a whole-body roll turns about. */
 const PIVOT_Y = -1;
 /** Where the sole sits, and how far ahead of the hip, for one leg of a pose. */
@@ -60,7 +61,8 @@ describe('actions', () => {
       lean = Math.max(lean, Math.abs(pose.root!.x!));
       // Left is planted through the first half of the cycle, right through the second.
       const stance: 'L' | 'R' = t % WALK_PERIOD < WALK_PERIOD / 2 ? 'L' : 'R';
-      expect(Math.abs(worldSole(pose, stance) - GROUND)).toBeLessThan(2);
+      // Within 3 mm: the last of it is the second-order term the hip compensation drops.
+      expect(Math.abs(worldSole(pose, stance) - GROUND)).toBeLessThan(3);
       lifted = Math.max(lifted, worldSole(pose, stance === 'L' ? 'R' : 'L') - GROUND);
     }
     // The free leg still swings clear of the floor at the middle of its half.
@@ -100,6 +102,35 @@ describe('actions', () => {
     expect(poseAt(2.0, 'grab', LEGS).jaw!.angle!).toBeLessThan(-0.3);
     expect(poseAt(2.9, 'grab', LEGS).jaw!.angle!).toBeGreaterThan(-0.15);
     for (const side of ['L', 'R'] as const) expect(Math.abs(soleGap(down, side))).toBeLessThan(2);
+  });
+
+  it('rests on the floor when it is on its back instead of hanging above it', () => {
+    // Corners of the trunk: what actually lands when the duck goes over backwards.
+    const BODY: [number, number][] = [
+      [-47, -39],
+      [-46, 42],
+      [35, 0],
+    ];
+    const PIVOT_X = -6.2;
+    const worldY = (pose: Pose, p: [number, number]) => {
+      const angle = pose.root!.z || 0;
+      return (
+        PIVOT_Y +
+        pose.root!.dy! +
+        (p[0] - PIVOT_X) * Math.sin(angle) +
+        (p[1] - PIVOT_Y) * Math.cos(angle)
+      );
+    };
+    let resting = Infinity;
+    for (let t = 0; t <= RECOVER_SECONDS; t += 0.05) {
+      const pose = poseAt(t, 'recover', LEGS);
+      const lows = BODY.map((p) => worldY(pose, p));
+      // Nothing ever goes through the floor...
+      expect(Math.min(...lows)).toBeGreaterThan(GROUND - 0.5);
+      // ...and while it is on its back, some part of the trunk is on it.
+      if ((pose.root!.z || 0) > 1.4) resting = Math.min(resting, Math.min(...lows) - GROUND);
+    }
+    expect(resting).toBeLessThan(2);
   });
 
   it('ends every cycle back where it started, so a loop never jumps', () => {
