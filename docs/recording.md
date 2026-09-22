@@ -28,6 +28,8 @@ To reproduce: serve the app and open `?demo=1` at a 1920 × 1080 viewport. Demo 
 
 Camera moves are eased and the turn and walk ease in and out, so no beat starts or ends with a jolt. Every control is scrolled into view before it is used, and the recorded cursor shows where the click lands.
 
+The encode fades the first and last frames through the page's own background, so the file loops without a hard cut: the last frame matches the first.
+
 ## Fullscreen in the recording
 
 A recording runs headless, and a synthetic click is never granted the Fullscreen API. Demo mode therefore puts the equivalent `.is-fullscreen` styles on the stage instead of calling `requestFullscreen()`: the same rules the real fullscreen element gets. Everything else in the recording is the app's own behaviour.
@@ -35,7 +37,7 @@ A recording runs headless, and a synthetic click is never granted the Fullscreen
 ## Encoding
 
 ```sh
-ffmpeg -framerate 10 -i frame-%03d.jpg -filter_complex 'fps=10,scale=1280:720:flags=lanczos,split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle' -loop 0 studio-demo.gif
+ffmpeg -framerate 10 -i frame-%03d.jpg -filter_complex 'fps=10,scale=1280:720:flags=lanczos,fade=t=in:st=0:d=0.4:color=0xeef0eb,fade=t=out:st=36.0:d=0.5:color=0xeef0eb,split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle' -loop 0 studio-demo.gif
 gifsicle -O3 --lossy=170 studio-demo.gif -o studio-demo.opt.gif && mv studio-demo.opt.gif studio-demo.gif
 ```
 
