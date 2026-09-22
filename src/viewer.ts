@@ -1066,6 +1066,30 @@ export class Viewer {
     this.controls.target.copy(this.center);
     this.controls.update();
   }
+  /**
+   * Frame the given parts: a close-up on one assembly, keeping the direction the camera is
+   * already looking from. `fill` scales the distance, so 1 fits the parts' bounding sphere.
+   */
+  focus(ids: string[], fill = 1) {
+    const box = new THREE.Box3();
+    for (const id of ids) {
+      const mesh = this.meshes.get(id);
+      if (mesh) box.expandByObject(mesh);
+    }
+    if (box.isEmpty()) return;
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    // The longest side, not the diagonal: a thin shell would otherwise stay far away.
+    const radius = Math.max(size.x, size.y, size.z) / 2;
+    const distance = Math.max(
+      this.controls.minDistance,
+      (radius / Math.sin((this.camera.fov * Math.PI) / 360)) * fill,
+    );
+    const direction = this.camera.position.clone().sub(this.controls.target).normalize();
+    this.controls.target.copy(center);
+    this.camera.position.copy(center).add(direction.multiplyScalar(distance));
+    this.controls.update();
+  }
   png() {
     const shown = this.box.visible;
     this.box.visible = false;

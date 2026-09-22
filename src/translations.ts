@@ -502,6 +502,7 @@ export const english: Record<string, string> = {
   '动作：': 'Action: ',
   走路: 'Walk',
   摇头: 'Head shake',
+  歪头: 'Head tilt',
   张嘴: 'Beak',
   循环播放: 'the loop',
   '电影布光 · 外观预览': 'Film lighting · Appearance preview',

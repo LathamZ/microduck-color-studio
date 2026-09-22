@@ -6,9 +6,9 @@ Microduck 3D color studio. Customize the colors, materials and lighting of a rea
 
 **[Open the studio](https://lathamz.github.io/microduck-color-studio/?lang=en)**
 
-![Microduck Color Studio: a 15-second feature preview](docs/media/studio-demo.gif)
+![Microduck Color Studio: a 36-second feature preview](docs/media/studio-demo.gif)
 
-The preview shows the assembly, palettes from the tray, dragging the colour picker while the model follows live, dragging the lights and switching presets, stepping through materials, linking a part to a filament and then editing that spool, saving and switching looks, shuffled recommendations applied to the model, exploding and isolating parts, a head shake from the actions menu, and a print export with its plate preview. It captures only the webpage viewport and uses example inventory.
+In order, the preview turns the duck while two palettes from the tray apply, pushes the camera in on one part to drag the colour picker live and step through four materials, takes the light rigs from studio to daylight to warm to cinema and through its film setups, aims the lamp by direction, angle and strength, goes fullscreen for a walk around the duck and a head tilt, saves and re-applies a look, and exports a print project with its plate preview. It captures only the webpage viewport and uses example inventory.
 
 ## What you can do
 

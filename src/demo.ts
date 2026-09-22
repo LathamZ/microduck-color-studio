@@ -1,12 +1,36 @@
 /** Deterministic, isolated presentation mode for documentation recording.
  * Open ?demo=1. Right arrow advances one 100 ms frame. No local data is read or saved.
+ *
+ * The beats follow the storyboard in docs/recording.md: meet the duck, recolour it while it
+ * turns, work on one part up close, walk through the light rigs, fill the screen for a walk,
+ * then save the look and export the plates.
  */
 import { defaults, type Manifest, type Palette } from './domain';
 import type { Viewer } from './viewer';
 import type { Inventory } from './recommend';
 
-/** A walk through every capability, one beat per range of frames: 30 seconds at 10 fps. */
-export const DEMO_FRAMES = 300;
+/** Frame range of each beat, in 100 ms frames. */
+const BEAT = {
+  intro: [0, 8],
+  spin: [9, 42],
+  settle: [43, 48],
+  push: [49, 60],
+  recolour: [61, 82],
+  materials: [83, 102],
+  pullBack: [103, 112],
+  lights: [113, 138],
+  patterns: [139, 162],
+  shape: [163, 198],
+  fullscreen: [199, 210],
+  walk: [211, 268],
+  tilt: [269, 288],
+  exit: [289, 295],
+  looks: [296, 317],
+  print: [318, 357],
+  end: [358, 365],
+};
+/** 36.6 seconds at 10 frames a second. */
+export const DEMO_FRAMES = 366;
 
 export function setupDemo(
   model: Manifest,
@@ -17,7 +41,9 @@ export function setupDemo(
   print: { load(bytes: Uint8Array, name: string): Promise<unknown> },
 ) {
   let frame = -1;
-  const head = model.parts.find((p) => p.sourceName === 'top_head_shell')?.id;
+  /** The azimuth the turn starts from: the standard view, whatever the model calls it. */
+  let spinFrom = 0;
+  /** The torso: colours and materials are both shown on this part, up close. */
   const body =
     model.parts.find((p) => p.sourceName === 'right_shell')?.id ||
     model.parts.find((p) => p.printable)!.id;
@@ -33,6 +59,7 @@ export function setupDemo(
     ],
   };
   stock.setInventory(inventory);
+  void select; // kept in the signature: callers pass the editor's own selection handler
   // A visible pointer: the demo scrolls each control into view, moves the cursor onto it
   // and lets the click pulse, so the recording shows what is being used and where.
   const cursor = document.createElement('div');
@@ -75,6 +102,38 @@ export function setupDemo(
     input.value = String(value);
     input.dispatchEvent(new Event('input', { bubbles: true }));
   };
+  /**
+   * Camera moves, eased between two framings: a push-in onto a part reads as a camera move
+   * instead of a cut, and the same machinery carries the return to the standard view.
+   */
+  let from: number[] = [];
+  let to: number[] = [];
+  const cameraState = () => [
+    viewer.camera.position.x,
+    viewer.camera.position.y,
+    viewer.camera.position.z,
+    viewer.controls.target.x,
+    viewer.controls.target.y,
+    viewer.controls.target.z,
+  ];
+  const applyCamera = (a: number[], b: number[], t: number) => {
+    const value = a.map((n, i) => n + (b[i] - n) * t);
+    viewer.camera.position.set(value[0], value[1], value[2]);
+    viewer.controls.target.set(value[3], value[4], value[5]);
+    viewer.controls.update();
+  };
+  const glideTo = (move: () => void) => {
+    from = cameraState();
+    move();
+    to = cameraState();
+    applyCamera(from, to, 0);
+  };
+  /** Ease in and out, so every move starts and ends without a jolt. */
+  const ease = (t: number) => {
+    const v = Math.max(0, Math.min(1, t));
+    return v * v * (3 - 2 * v);
+  };
+  const glideAt = (t: number) => applyCamera(from, to, ease(t));
   /** A four-object 3MF, so the print dialog has something real to match. */
   const samplePrint = () => {
     const mesh =
@@ -128,116 +187,140 @@ export function setupDemo(
     input.value = colour;
     input.dispatchEvent(new Event('input', { bubbles: true }));
   };
+  /** Where the camera stands now, as the angle `viewer.orbit` takes. */
+  const azimuthOf = () => {
+    const offset = viewer.camera.position.clone().sub(viewer.controls.target);
+    return (Math.atan2(offset.x, offset.z) * 180) / Math.PI;
+  };
+  /** The model decides which way it faces, so ask it instead of assuming an axis. */
+  const frontAzimuth = (() => {
+    const position = viewer.camera.position.clone();
+    const target = viewer.controls.target.clone();
+    viewer.view('front');
+    const found = azimuthOf();
+    viewer.camera.position.copy(position);
+    viewer.controls.target.copy(target);
+    viewer.controls.update();
+    return found;
+  })();
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowRight') return;
     e.preventDefault();
     frame++;
-    // 0-24: orbit the assembled duck.
+    const within = (beat: number[]) => frame >= beat[0] && frame <= beat[1];
+    const at = (beat: number[], offset = 0) => frame === beat[0] + offset;
+    const span = (beat: number[]) => (frame - beat[0]) / (beat[1] - beat[0]);
+
+    // 0-8: meet the duck, in the studio's own standard view. It stands still first.
     if (frame === 0) {
       apply(base);
       viewer.select(null);
+      viewer.view('three-quarter');
+      spinFrom = azimuthOf();
     }
-    if (frame < 25) viewer.orbit(-45 + frame * 3, 12);
-    if (frame === 25) click('[data-preset="1"]');
-    if (frame === 30) click(`[data-part="${body}"]`);
-    // 32-56: the colour picker dragged over the torso while the model follows live.
-    if (frame === 31) aim('#part-color');
-    if (frame >= 32 && frame <= 54)
-      dragColour(['#F2C94C', '#F28C28', '#ECC6C5', '#3AC9BD', '#254D70'], (frame - 32) / 22);
-    if (frame === 56) {
-      const input = document.getElementById('part-color') as HTMLInputElement | null;
-      input?.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    // 60-89: the lights dragged live, then switched between presets.
-    if (frame === 60) aim('#direction');
-    if (frame >= 62 && frame <= 74) setSlider('direction', -150 + (frame - 62) * 25);
-    if (frame === 76) setSlider('direction', -35);
-    if (frame >= 78 && frame <= 83) setSlider('intensity', 60 + (frame - 78) * 20);
-    if (frame === 85) setSlider('intensity', 100);
-    if (frame === 87) click('[data-light="daylight"]');
-    if (frame === 90) click('[data-light="warm"]');
-    if (frame === 94) click('[data-light="cinema"]');
-    // 98-122: materials, one after another, on the same torso part.
-    const materials = ['matte-pla', 'silk-pla', 'metallic-petg', 'petg-cf', 'pa-cf', 'pla'];
-    materials.forEach((material, index) => {
-      if (frame === 100 + index * 4) {
+    // 9-42: turn it and recolour it on the way round, easing up and easing to a stop.
+    if (within(BEAT.spin)) viewer.orbit(spinFrom + ease(span(BEAT.spin)) * 170, 14);
+    if (at(BEAT.spin, 5)) click('[data-preset="1"]');
+    if (at(BEAT.spin, 21)) click('[data-preset="3"]');
+    // 49-112: the torso, up close: recolour it by hand, then step through the materials.
+    if (frame === BEAT.settle[1]) click(`[data-part="${body}"]`);
+    // Close enough to read the surface, wide enough to keep the part in one piece, and swung
+    // round to look at it from the front while the camera comes in.
+    if (at(BEAT.push))
+      glideTo(() => {
+        viewer.focus([body], 1.9);
+        viewer.orbit(frontAzimuth + 38, 12);
+      });
+    if (within(BEAT.push)) glideAt(span(BEAT.push));
+    if (at(BEAT.recolour)) aim('#part-color');
+    if (frame > BEAT.recolour[0] && frame < BEAT.recolour[1])
+      dragColour(
+        ['#F2C94C', '#F28C28', '#ECC6C5', '#3AC9BD', '#254D70'],
+        (frame - BEAT.recolour[0]) / (BEAT.recolour[1] - BEAT.recolour[0]),
+      );
+    if (frame === BEAT.recolour[1])
+      document.getElementById('part-color')?.dispatchEvent(new Event('change', { bubbles: true }));
+    if (within(BEAT.recolour) || within(BEAT.materials))
+      viewer.orbit(frontAzimuth + 38 + (frame - BEAT.recolour[0]) * 0.45, 12);
+    ['matte-pla', 'silk-pla', 'metallic-petg', 'petg-cf'].forEach((material, index) => {
+      if (at(BEAT.materials, index * 5)) {
         scrollTo(0);
         click(`[data-material="${material}"]`);
       }
     });
-    // 124-148: link a part to a spool, then edit that filament in the library.
-    if (frame === 124) click(`[data-part="${body}"]`);
-    if (frame === 128) click('[data-owned="demo-sage"]');
-    if (frame === 133) {
-      click('#inventory-open');
-      const swatch = document.querySelector(
-        '[data-stock="demo-sage"] [data-field="color"]',
-      ) as HTMLInputElement | null;
-      if (swatch) {
-        swatch.value = '#F2C94C';
-        swatch.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+    if (at(BEAT.pullBack)) glideTo(() => viewer.view('three-quarter'));
+    if (within(BEAT.pullBack)) glideAt(span(BEAT.pullBack));
+    // 113-162: the light rigs, then the film setups inside the cinema rig.
+    if (at(BEAT.lights, 1)) click('[data-light="daylight"]');
+    if (at(BEAT.lights, 8)) click('[data-light="warm"]');
+    if (at(BEAT.lights, 15)) click('[data-light="cinema"]');
+    ['butterfly', 'rembrandt', 'split', 'rim'].forEach((pattern, index) => {
+      if (at(BEAT.patterns, 1 + index * 6)) click(`[data-pattern="${pattern}"]`);
+    });
+    // 163-198: aim the lamp: direction, then angle, then strength.
+    if (at(BEAT.shape)) aim('#direction');
+    if (frame > BEAT.shape[0] + 1 && frame <= BEAT.shape[0] + 10)
+      setSlider('direction', -150 + (frame - BEAT.shape[0] - 1) * 25);
+    if (frame > BEAT.shape[0] + 12 && frame <= BEAT.shape[0] + 19)
+      setSlider('elevation', 20 + (frame - BEAT.shape[0] - 12) * 8.5);
+    if (frame > BEAT.shape[0] + 22 && frame <= BEAT.shape[0] + 27)
+      setSlider('intensity', 40 + (frame - BEAT.shape[0] - 22) * 24);
+    if (frame > BEAT.shape[0] + 28 && frame <= BEAT.shape[0] + 34)
+      setSlider('intensity', 160 - (frame - BEAT.shape[0] - 28) * 10);
+    // 199-268: fullscreen, then a walk all the way round and back to the front.
+    if (at(BEAT.fullscreen)) click('#fullscreen');
+    // Face the duck first, then walk it right the way round and stop where it started.
+    if (at(BEAT.walk)) glideTo(() => viewer.orbit(frontAzimuth, 14));
+    if (frame >= BEAT.walk[0] && frame <= BEAT.walk[0] + 6) glideAt((frame - BEAT.walk[0]) / 6);
+    if (at(BEAT.walk, 8)) hover('.motion-tools', true);
+    if (at(BEAT.walk, 11)) click('[data-motion="walk"]');
+    if (frame > BEAT.walk[0] + 11 && frame <= BEAT.walk[1])
+      viewer.orbit(
+        frontAzimuth + ease((frame - BEAT.walk[0] - 11) / (BEAT.walk[1] - BEAT.walk[0] - 11)) * 360,
+        14,
+      );
+    // 269-295: stop, tilt the head, and come back out of fullscreen.
+    if (at(BEAT.tilt)) click('#motion-toggle');
+    if (at(BEAT.tilt, 2)) hover('.motion-tools', true);
+    if (at(BEAT.tilt, 5)) click('[data-motion="tilt"]');
+    // Let the head come back level before leaving fullscreen, so the rest of the tour is still.
+    if (at(BEAT.tilt, 13)) {
+      hover('.motion-tools', false);
+      click('#motion-toggle');
     }
-    if (frame === 146) click('.inventory-close');
-    // 149-174: save the look, change it, then switch back and let it sit.
-    if (frame === 149) click('#looks-toggle');
-    if (frame === 152) {
+    if (at(BEAT.exit)) click('#fullscreen');
+    // 296-317: keep the look: save it, change it, then apply the saved one back.
+    if (at(BEAT.looks)) click('#looks-toggle');
+    if (at(BEAT.looks, 3)) {
       const name = document.getElementById('looks-name') as HTMLInputElement | null;
       if (name) {
         name.value = '我的第一版';
         name.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
-    if (frame === 155) click('#looks-save-button');
-    if (frame === 158) {
-      click('#looks-toggle');
-      click('[data-preset="3"]');
-    }
-    if (frame === 163) {
-      click('#looks-toggle');
-      click('[data-apply]');
-    }
-    if (frame === 173) click('#looks-toggle');
-    // 176-209: recommendations from the real stock: shuffle, shuffle, apply, hold.
-    if (frame === 176) click('#inventory-open');
-    if (frame === 182) click('#shuffle-recommend');
-    if (frame === 190) click('#shuffle-recommend');
-    if (frame === 196) click('[data-plan]');
-    // 204-232: assembly view: explode, then isolate the selected part.
-    if (frame === 204) click(`[data-part="${body}"]`);
-    if (frame >= 208 && frame <= 216) setSlider('explode', (frame - 208) * 7);
-    if (frame === 224) setSlider('explode', 0);
-    if (frame === 226) click('#isolate');
-    if (frame === 232) click('#isolate');
-    // 234-244: the actions menu, playing a head shake.
-    if (frame === 234) {
-      click('[data-view="three-quarter"]');
-      viewer.view('three-quarter');
-    }
-    if (frame === 236) hover('.motion-tools', true);
-    if (frame === 239) click('[data-motion="shake"]');
-    if (frame === 244) click('#motion-toggle');
-    // 246-299: export, with the print model matched against the look.
-    if (frame === 246) void samplePrint().then((bytes) => print.load(bytes, 'duck-plates.3mf'));
-    if (frame === 254) {
+    if (at(BEAT.looks, 6)) click('#looks-save-button');
+    if (at(BEAT.looks, 9)) click('#looks-menu [data-close]');
+    if (at(BEAT.looks, 10)) click('[data-preset="5"]');
+    if (at(BEAT.looks, 13)) click('#looks-toggle');
+    if (at(BEAT.looks, 16)) click('[data-apply]');
+    if (at(BEAT.looks, 20)) click('#looks-menu [data-close]');
+    // 318-357: export, with the print model matched against the look.
+    if (at(BEAT.print)) void samplePrint().then((bytes) => print.load(bytes, 'duck-plates.3mf'));
+    if (at(BEAT.print, 10)) {
       click('#export-menu-toggle');
       click('#export-print-open');
     }
-    if (frame === 262) {
+    if (at(BEAT.print, 16)) {
       const picker = document.getElementById('print-printer') as HTMLSelectElement | null;
       if (picker) {
         picker.value = 'p1s';
         picker.dispatchEvent(new Event('change', { bubbles: true }));
       }
     }
-    if (frame === 268) {
-      const list = document.getElementById('print-object-list');
-      list?.scrollTo({ top: 260, behavior: 'auto' });
-    }
-    if (frame === 278) {
-      const list = document.getElementById('print-object-list');
-      list?.scrollTo({ top: 0, behavior: 'auto' });
-    }
-    if (frame === 284) click('#print-plan');
+    if (at(BEAT.print, 22))
+      document.getElementById('print-object-list')?.scrollTo({ top: 260, behavior: 'auto' });
+    if (at(BEAT.print, 28))
+      document.getElementById('print-object-list')?.scrollTo({ top: 0, behavior: 'auto' });
+    if (at(BEAT.print, 32)) click('#print-plan');
   });
 }

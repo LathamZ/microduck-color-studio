@@ -2497,16 +2497,26 @@ html[lang='en'] .reference-heading {
   }
 }
 
-/* Fullscreen: the stage takes the whole screen, overlays included. */
-.stage:fullscreen {
+/* Fullscreen: the stage takes the whole screen, overlays included. Demo recordings cannot
+   hold the Fullscreen API open across synthetic clicks, so they add `.is-fullscreen` and
+   get these same rules — the recorded picture matches what the real button produces. */
+.stage:fullscreen,
+.stage.is-fullscreen {
   width: 100vw;
   height: 100vh;
   background: #eef0eb;
 }
-.stage:fullscreen #viewport {
+.stage.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.stage:fullscreen #viewport,
+.stage.is-fullscreen #viewport {
   min-height: 0;
   height: 100vh;
 }
-.stage:fullscreen .stage-caption {
+.stage:fullscreen .stage-caption,
+.stage.is-fullscreen .stage-caption {
   bottom: 24px;
 }

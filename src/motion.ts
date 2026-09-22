@@ -4,7 +4,7 @@
  * thing on the robot that can actually turn. `src/models/active.ts` says which servo drives
  * which parts; `src/viewer.ts` measures the horns and applies the angles.
  */
-export const MOTIONS = ['walk', 'shake', 'beak'] as const;
+export const MOTIONS = ['walk', 'shake', 'tilt', 'beak'] as const;
 export type MotionName = (typeof MOTIONS)[number];
 export type JointName =
   | 'root'
@@ -184,6 +184,22 @@ export function shake(t: number): Pose {
     headPitch: { angle: 0.07 * envelope },
   };
 }
+/** How long the head tilt is held, in seconds. */
+export const TILT_SECONDS = 2.7;
+/**
+ * A curious head tilt: the head's own servo leans it over to one side, holds, and comes back.
+ * That servo's measured horn axis runs fore-and-aft, so this is a roll — the head turning its
+ * ear down, which is the one lean this neck actually has. The neck adds a little of its own.
+ */
+export function tilt(t: number): Pose {
+  const ramp = Math.min(1, t / 0.5) * Math.min(1, Math.max(0, (TILT_SECONDS - t) / 0.5));
+  const hold = ramp * ramp * (3 - 2 * ramp);
+  return {
+    headPitch: { angle: -0.38 * hold },
+    headYaw: { angle: 0.13 * hold },
+    neckPitch: { angle: 0.06 * hold },
+  };
+}
 /** Beak opening and closing, with a small head tilt. */
 export function beak(t: number): Pose {
   const phase = (t / 2.2) * TAU;
@@ -197,11 +213,13 @@ export function beak(t: number): Pose {
 export const motionPoses: Record<MotionName, (t: number) => Pose> = {
   walk,
   shake,
+  tilt,
   beak,
 };
 export const MOTION_LABELS: Record<MotionName, string> = {
   walk: '走路',
   shake: '摇头',
+  tilt: '歪头',
   beak: '张嘴',
 };
 /**
