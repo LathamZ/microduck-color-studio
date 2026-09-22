@@ -748,8 +748,11 @@ export class Viewer {
       // duck stands on, so that is what sets the ground.
       const box = new THREE.Box3();
       for (const id of this.below(`ankle${side}` as JointName)) {
+        const part = this.model.parts.find((p) => p.id === id);
         const mesh = this.meshes.get(id);
-        if (mesh) box.expandByObject(mesh);
+        // Only what is fitted: the skates' wheels hang below the feet and would otherwise set
+        // the floor while the duck is standing on its soles, leaving it hovering above them.
+        if (mesh && part && isFitted(part, this.module)) box.expandByObject(mesh);
       }
       const soleBottom = box.isEmpty() ? ankle.pivot.y - 25 : box.min.y;
       return {
@@ -1011,9 +1014,10 @@ export class Viewer {
       this.buildRig();
     }
     this.module = name;
-    // The ankle's own geometry decides where the ground is: skates stand taller than feet.
-    this.legs = this.measureLegs();
+    // Show the fitted set first: what it stands on is what sets the ground, so the leg
+    // geometry has to be measured against the module that is actually on.
     this.applyVisibility();
+    this.legs = this.measureLegs();
     this.select(this.selected);
     this.restage();
   }

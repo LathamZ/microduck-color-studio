@@ -261,7 +261,7 @@ function drawList() {
   $('#part-list').innerHTML =
     (parts.length ? assemblyGroups(parts) : '<div class="empty">没有找到匹配零件</div>') +
     (aside.length
-      ? `<details class="part-aside"><summary>${t('未安装')} · ${t(module === 'skate' ? '步行脚' : '轮滑模组')}<span>${aside.length}</span></summary>${assemblyGroups(aside)}</details>`
+      ? `<details open class="part-aside"><summary>${t('未安装')} · ${t(module === 'skate' ? '步行脚' : '轮滑模组')}<span>${aside.length}</span></summary>${assemblyGroups(aside)}</details>`
       : '');
 }
 function select(id: string) {
