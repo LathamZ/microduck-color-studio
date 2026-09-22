@@ -7,6 +7,9 @@
 export const MOTIONS = [
   'walk',
   'skate',
+  'sprint',
+  'turn',
+  'brake',
   'sit',
   'kick',
   'grab',
@@ -374,6 +377,8 @@ export function recover(t: number, legs?: Legs): Pose {
 }
 /** One skate stride, in seconds. */
 export const SKATE_PERIOD = 1.7;
+export const SPRINT_PERIOD = 0.95;
+export const TURN_PERIOD = 2.4;
 /**
  * Skating: the duck rolls on its wheels and pushes off with one leg at a time, carrying its
  * weight over the leg that is gliding. Nothing steps — the wheels do the travelling — so a
@@ -381,6 +386,109 @@ export const SKATE_PERIOD = 1.7;
  * floor the way a skater picks a foot up to bring it round. The wheels turn the whole time,
  * and the body rocks as it does when it waddles, without the lift of a step.
  */
+/** The lean, travel and hip fix-ups every skating action shares. */
+function skateFrame(phase: number, lean: number, legs: Legs | undefined, amount: number) {
+  const roll = amount * lean;
+  const shift = 7 * lean;
+  const half = legs ? (legs.L.hipOffset + legs.R.hipOffset) / 2 : 0;
+  return {
+    roll,
+    shift,
+    bob: -1.2 * Math.cos(2 * phase),
+    rise: (side: 'L' | 'R') => Math.sin(roll) * half * (side === 'L' ? 1 : -1),
+    kneeFix: (shift - (PIVOT[1] - GROUND) * Math.sin(roll)) / (HIP_Y - GROUND),
+  };
+}
+/** How far a wheel rolls: one circumference per stride. */
+const wheelRoll = (t: number, period: number) => (-t * TAU * 26) / period;
+/** A quicker cadence: the same stride, crouched lower and leaning into it. */
+export function sprint(t: number, legs?: Legs): Pose {
+  const phase = (t / SPRINT_PERIOD) * TAU;
+  const { roll, shift, bob, rise, kneeFix } = skateFrame(phase, Math.cos(phase), legs, 0.16);
+  const crouch = 11;
+  const foot = (side: 'L' | 'R') => {
+    const wheel = side === 'L' ? legs?.L : legs?.R;
+    const v = (side === 'L' ? (phase / TAU) % 1 : ((phase / TAU) % 1) + 0.5) % 1;
+    const x = v < 0.5 ? 12 - 34 * (v / 0.5) : -22 + 34 * smooth((v - 0.5) / 0.5);
+    const y = v < 0.5 ? 0 : 5 * Math.sin(Math.PI * ((v - 0.5) / 0.5));
+    return legAt(side, [x, y + crouch], wheel, rise(side) + bob + crouch);
+  };
+  return {
+    root: { x: 0.1 + roll, dz: shift, dy: bob - crouch },
+    turnL: { angle: 0.12 * Math.cos(phase) },
+    turnR: { angle: -0.12 * Math.cos(phase) },
+    splayL: { angle: kneeFix },
+    splayR: { angle: -kneeFix },
+    neckBase: { angle: -0.16 },
+    headPitch: { angle: -roll * 0.6 },
+    ...foot('L'),
+    ...foot('R'),
+    wheelLF: { angle: wheelRoll(t, SPRINT_PERIOD) },
+    wheelLR: { angle: wheelRoll(t, SPRINT_PERIOD) },
+    wheelRF: { angle: wheelRoll(t, SPRINT_PERIOD) },
+    wheelRR: { angle: wheelRoll(t, SPRINT_PERIOD) },
+  };
+}
+/**
+ * Carving: the duck slaloms on its edges, leaning into each corner while the skates swing out
+ * to the side of the lean and back under it, the way a skater's feet do through a turn.
+ */
+export function turn(t: number, legs?: Legs): Pose {
+  const phase = (t / TURN_PERIOD) * TAU;
+  const lean = Math.sin(phase);
+  const { roll, shift, bob, rise, kneeFix } = skateFrame(phase, lean, legs, 0.2);
+  const carve = 16 * lean;
+  const foot = (side: 'L' | 'R') =>
+    legAt(
+      side,
+      [side === 'L' ? carve : -carve * 0.6, 0],
+      side === 'L' ? legs?.L : legs?.R,
+      rise(side) + bob,
+    );
+  return {
+    root: { x: roll, y: 0.2 * lean, dz: shift, dy: bob },
+    // The skates point where they are travelling, and the head looks into the corner.
+    turnL: { angle: 0.35 + 0.2 * lean },
+    turnR: { angle: -0.35 + 0.2 * lean },
+    splayL: { angle: kneeFix },
+    splayR: { angle: -kneeFix },
+    headYaw: { angle: -0.2 * lean },
+    headPitch: { angle: -roll * 0.5 },
+    ...foot('L'),
+    ...foot('R'),
+    wheelLF: { angle: wheelRoll(t, TURN_PERIOD) },
+    wheelLR: { angle: wheelRoll(t, TURN_PERIOD) },
+    wheelRF: { angle: wheelRoll(t, TURN_PERIOD) },
+    wheelRR: { angle: wheelRoll(t, TURN_PERIOD) },
+  };
+}
+/**
+ * Braking: the skates whip sideways across the direction of travel and the duck sits back
+ * against them until it stops, then straightens up and rolls on. One arc, so it loops.
+ */
+export function brake(t: number, legs?: Legs): Pose {
+  const scrub = arc(t, 0.5, 1.4, 0.9);
+  const crouch = 9 * scrub;
+  const foot = (side: 'L' | 'R') =>
+    legAt(side, [-4 * scrub, crouch], side === 'L' ? legs?.L : legs?.R, crouch);
+  const skid = -t * 3 * (1 - scrub);
+  return {
+    // Sitting back against the skids is what stops him.
+    root: { x: -0.14 * scrub, dy: -crouch },
+    turnL: { angle: 0.9 * scrub },
+    turnR: { angle: -0.9 * scrub },
+    splayL: { angle: 0.12 * scrub },
+    splayR: { angle: -0.12 * scrub },
+    neckBase: { angle: 0.14 * scrub },
+    headPitch: { angle: 0.1 * scrub },
+    ...foot('L'),
+    ...foot('R'),
+    wheelLF: { angle: skid },
+    wheelLR: { angle: skid },
+    wheelRF: { angle: skid },
+    wheelRR: { angle: skid },
+  };
+}
 export function skate(t: number, legs?: Legs): Pose {
   const phase = (t / SKATE_PERIOD) * TAU;
   const lean = Math.cos(phase);
@@ -465,6 +573,9 @@ export type Legs = { L: LegGeometry; R: LegGeometry };
 export const motionPoses: Record<MotionName, (t: number, legs?: Legs) => Pose> = {
   walk,
   skate,
+  sprint,
+  turn,
+  brake,
   sit,
   kick,
   grab,
@@ -476,6 +587,9 @@ export const motionPoses: Record<MotionName, (t: number, legs?: Legs) => Pose> =
 export const MOTION_LABELS: Record<MotionName, string> = {
   walk: '走路',
   skate: '滑行',
+  sprint: '加速',
+  turn: '转弯',
+  brake: '刹车',
   sit: '坐下站起',
   kick: '踢一下',
   grab: '叼一口',
