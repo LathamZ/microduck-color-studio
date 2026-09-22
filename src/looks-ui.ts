@@ -2,6 +2,7 @@ import { locale } from './i18n';
 import type { Manifest, Palette } from './domain';
 import {
   MAX_LOOKS,
+  lookPalette,
   parseLooks,
   readLooks,
   relativeTime,
@@ -150,7 +151,9 @@ export function looksUI(
     if (!id) return;
     if (target.closest('[data-apply]')) {
       const look = looks.find((l) => l.id === id)!;
-      apply(structuredClone(look.palette));
+      // A scheme carries colors, materials, coatings and filament links. How you are looking
+      // at the duck — the light, the layer-line shading — stays exactly as you left it.
+      apply(lookPalette(look, getPalette()));
       draw();
       notify(`已套用「${look.name}」`);
       return;
@@ -257,7 +260,7 @@ export function looksUI(
     apply(id: string) {
       const look = looks.find((l) => l.id === id);
       if (!look) throw new Error('未找到该配色方案');
-      const palette = structuredClone(look.palette);
+      const palette = lookPalette(look, getPalette());
       apply(palette);
       draw();
       return palette;

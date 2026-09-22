@@ -32,6 +32,11 @@ api.saveLook('Evening warm'); // adds, or replaces the look with that name
 api.applyLook(api.getLooks()[0].id); // commits through the shared validator and undo history
 ```
 
+A look is a color scheme: applying it restores the colors, materials, coatings and filament
+links of its parts, and leaves the lighting and surface settings you are viewing with. The
+`lighting` recorded in `getLooks()[i].palette` is what was on screen when it was saved; it is
+not something `applyLook` puts back.
+
 `updateParts`, `setLighting`, `setSurface` and `importPalette` return the resulting complete palette.
 Passing `stockId` in an `updateParts` patch links a part to an item in the local filament inventory, so the part follows that spool's color and material. Any hand-picked `color` or `material` releases the link unless the same patch sets `stockId` again. They update the UI, render, local storage and undo history. Invalid mutations throw before changing state. Empty/no-op updates do not create history entries. `selectPart` throws for unknown IDs. `setView` uses the default view for an unknown view name.
 

@@ -51,9 +51,24 @@ export function writeLooks(model: Manifest, storage: Storage | null, looks: Save
     return false;
   }
 }
-/** Two looks are the same when their colors, materials, coatings, links, light and surface match. */
+/**
+ * A scheme is the colors, materials, coatings and filament links of its parts. Lighting and
+ * surface settings are how you happen to be looking at the duck rather than part of a scheme,
+ * so two palettes are the same look even after the lamp has moved.
+ */
 export function samePalette(a: Palette, b: Palette) {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return JSON.stringify(a.parts) === JSON.stringify(b.parts);
+}
+/**
+ * What applying a look hands back: its own parts over the light and surface already in use, so
+ * switching schemes leaves the room you are viewing in exactly as it was.
+ */
+export function lookPalette(look: SavedLook, current: Palette): Palette {
+  return {
+    ...structuredClone(look.palette),
+    lighting: current.lighting,
+    surface: current.surface,
+  };
 }
 export function relativeTime(savedAt: number, now: number, locale = 'zh-CN') {
   const seconds = Math.max(0, Math.round((now - savedAt) / 1000));

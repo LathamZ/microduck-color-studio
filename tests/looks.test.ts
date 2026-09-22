@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import {
   MAX_LOOKS,
   LOOKS_KEY,
+  lookPalette,
   parseLooks,
   readLooks,
   relativeTime,
@@ -80,15 +81,38 @@ describe('saved looks store', () => {
       '夜色',
     );
   });
-  it('compares whole palettes, including light, surface and filament links', () => {
+  it('compares the parts of a palette: light and surface are not part of a scheme', () => {
     const base = defaults(model);
     const clone: Palette = structuredClone(base);
     expect(samePalette(base, clone)).toBe(true);
     clone.lighting.preset = 'warm';
-    expect(samePalette(base, clone)).toBe(false);
+    clone.surface.layers = false;
+    expect(samePalette(base, clone)).toBe(true);
     const linked: Palette = structuredClone(base);
     linked.parts[model.parts[0].id].stockId = 'spool-1';
     expect(samePalette(base, linked)).toBe(false);
+  });
+  it('applies a look without moving the lamp or the layer-line shading', () => {
+    const saved: SavedLook = {
+      id: 'look-1',
+      name: '夜色',
+      savedAt: 1,
+      palette: { ...defaults(model), lighting: { preset: 'cinema', intensity: 1.4, azimuth: 20 } },
+    };
+    const current: Palette = {
+      ...defaults(model),
+      lighting: { preset: 'warm', intensity: 0.8, azimuth: -60 },
+      surface: { layers: false },
+    };
+    current.parts[model.parts[0].id].color = '#123456';
+    const applied = lookPalette(saved, current);
+    expect(applied.parts).toEqual(saved.palette.parts);
+    expect(applied.lighting).toEqual(current.lighting);
+    expect(applied.surface).toEqual(current.surface);
+    // The saved look itself is untouched, so applying twice gives the same result.
+    expect(saved.palette.lighting.preset).toBe('cinema');
+    applied.parts[model.parts[0].id].color = '#ffffff';
+    expect(saved.palette.parts[model.parts[0].id].color).not.toBe('#ffffff');
   });
   it('names a save after the palette, falling back to a numbered look', () => {
     expect(suggestedName('暖白与橙 · 已有耗材', 1)).toBe('暖白与橙');

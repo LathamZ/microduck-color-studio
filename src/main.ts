@@ -83,6 +83,9 @@ const icons = {
   Footprints,
 };
 const icon = (name: string) => `<i data-lucide="${name}" aria-hidden="true"></i>`;
+/** Lucide turns `data-lucide` placeholders into svg, so any markup built after the first pass
+ *  has to ask for it again — otherwise the button keeps an empty element and looks blank. */
+const renderIcons = () => createIcons({ icons });
 const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 const escape = (s: string) =>
   s.replace(
@@ -145,7 +148,7 @@ window.colorStudio.updateParts(
 window.colorStudio.setLighting({
   preset: 'studio', intensity: 1.2, azimuth: 45
 })</pre><p class="small-note">只更改当前网页的配色。不会修改打印工程，也不会发送打印任务。</p></dialog>`;
-createIcons({ icons });
+renderIcons();
 installI18n();
 const slogans = [
   '小鸭子，也有大脾气。',
@@ -589,11 +592,15 @@ function bind() {
       document.fullscreenElement === stageElement() ||
       !!stageElement()?.classList.contains('is-fullscreen');
     fullscreenButton.innerHTML = icon(active ? 'minimize' : 'maximize');
+    renderIcons();
     fullscreenButton.title = active ? '退出全屏' : '全屏查看';
     fullscreenButton.setAttribute('aria-label', fullscreenButton.title);
     fullscreenButton.setAttribute('aria-pressed', String(active));
   };
-  if (!document.fullscreenEnabled) fullscreenButton.hidden = true;
+  // Hidden only where the call does not exist at all: browsers report `fullscreenEnabled` as
+  // false in contexts that still honour a request, and a button that answers with a reason
+  // beats one that quietly disappears.
+  if (typeof stageElement()?.requestFullscreen !== 'function') fullscreenButton.hidden = true;
   fullscreenButton.onclick = () => {
     const stage = stageElement();
     if (!stage) return;
