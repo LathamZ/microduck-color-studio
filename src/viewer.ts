@@ -367,6 +367,9 @@ export class Viewer {
   controls: OrbitControls;
   meshes = new Map<string, THREE.Mesh>();
   group = new THREE.Group();
+  /** The set that is not fitted, laid out on the floor beside the duck. */
+  private spare = new THREE.Group();
+  private spareIds = new Set<string>();
   private frame = 0;
   private disposed = false;
   private ro: ResizeObserver;
@@ -574,12 +577,21 @@ export class Viewer {
     animate();
   }
   async load(url: string) {
+    // The spare set stands on the same floor as the duck, so it belongs to the same stage.
+    this.group.add(this.spare);
     // The base file carries everything that is not a swap-in module.
-    const gltf = await this.fetchModule(url, null);
-    void gltf;
+    await this.fetchModule(url, null);
+    // The other set of feet is part of the stage as well — it is laid out beside the duck — so
+    // it arrives with the rest instead of waiting for someone to fit it and look back.
+    if (this.model.rollerGeometryUrl) {
+      await this.fetchModule(this.model.rollerGeometryUrl, 'skate');
+    }
     this.buildRig();
     this.buildLightHint();
-    const bounds = new THREE.Box3().setFromObject(this.group);
+    // Fit a module before framing: what is laid out beside the duck is part of what must fit.
+    await this.setModule(this.module);
+    const bounds = new THREE.Box3();
+    for (const [, mesh] of this.meshes) if (mesh.visible) bounds.expandByObject(mesh);
     bounds.getCenter(this.center);
     this.size = bounds.getSize(new THREE.Vector3()).length();
     this.controls.target.copy(this.center);
@@ -729,6 +741,30 @@ export class Viewer {
     this.jointOrder = [...this.joints.keys()].sort((a, b) => depth(a) - depth(b));
     this.legs = this.measureLegs();
   }
+  /**
+   * Set the spare module down on the floor beside the duck, about a duck's width away, facing
+   * the same way. It is laid out where it can be seen from the standard view and clicked.
+   */
+  private layoutSpare() {
+    this.spare.position.set(0, 0, 0);
+    // Measure in the spare group's own frame, so refresh it before reading any world matrix:
+    // expandByObject reads the parents' matrices as they stand and does not recompute them.
+    this.spare.updateMatrixWorld(true);
+    const box = new THREE.Box3();
+    for (const id of this.spareIds) {
+      const mesh = this.meshes.get(id);
+      if (mesh) box.expandByObject(mesh);
+    }
+    if (box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3());
+    const centre = box.getCenter(new THREE.Vector3());
+    // Whatever the duck is standing on right now is what sets the floor.
+    const floor = (this.joints.get('ankleL')?.pivot.y ?? 0) - (this.legs?.L.ankleToSole ?? 25);
+    this.spare.position.set(0, floor - box.min.y, -(170 + size.z / 2) - centre.z);
+    // Refresh again: everything that reads a world matrix next — the stage bounds, the shadow
+    // camera — would otherwise still see the set where it was before it was moved aside.
+    this.spare.updateMatrixWorld(true);
+  }
   /** Every part hanging off a joint, itself included: the ankle, its blade and its wheels. */
   private below(id: JointName): string[] {
     const out = [...(this.joints.get(id)?.ids || [])];
@@ -848,6 +884,8 @@ export class Viewer {
     }
     const matrix = new THREE.Matrix4();
     for (const [partId, jointId] of this.jointOf) {
+      // The spare set is not bolted to the robot: it keeps the pose it was modelled in.
+      if (this.spareIds.has(partId)) continue;
       const mesh = this.meshes.get(partId);
       const rest = this.restMatrices.get(partId);
       const parent = world.get(jointId);
@@ -1020,8 +1058,9 @@ export class Viewer {
     for (const part of this.model.parts) {
       const mesh = this.meshes.get(part.id);
       if (!mesh) continue;
+      // The spare set is on show whenever the duck stands on something else.
       mesh.visible =
-        isFitted(part, this.module) &&
+        (this.spareIds.has(part.id) || isFitted(part, this.module)) &&
         (!this.isolated || part.id === this.isolated) &&
         (part.printable || this.hardwareVisible);
     }
@@ -1033,10 +1072,24 @@ export class Viewer {
       this.buildRig();
     }
     this.module = name;
+    // Fit one set and lay the other out beside the duck: a colour chosen for the spare has to
+    // be visible without switching modules to check it, or the palette can only ever cover
+    // what happens to be on screen.
+    this.spareIds.clear();
+    for (const part of this.model.parts) {
+      const mesh = this.meshes.get(part.id);
+      if (!mesh || !partModule(part)) continue;
+      if (isFitted(part, name)) this.group.add(mesh);
+      else {
+        this.spare.add(mesh);
+        this.spareIds.add(part.id);
+      }
+    }
     // Show the fitted set first: what it stands on is what sets the ground, so the leg
     // geometry has to be measured against the module that is actually on.
     this.applyVisibility();
     this.legs = this.measureLegs();
+    this.layoutSpare();
     this.select(this.selected);
     this.restage();
   }
@@ -1077,6 +1130,8 @@ export class Viewer {
   /** Offsets from the rest position. Re-applied after any pose reset so both can coexist. */
   private applyExplode() {
     for (const [id, m] of this.meshes) {
+      // The spare set is already apart; spreading it again would just scatter it.
+      if (this.spareIds.has(id)) continue;
       const v = this.explodeVectors.get(id)!.clone().sub(this.center);
       m.position.copy(this.origins.get(id)!).add(v.multiplyScalar(this.explodeValue * 0.8));
     }

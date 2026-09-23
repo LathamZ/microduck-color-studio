@@ -18,7 +18,7 @@ To reproduce: serve the app and open `?demo=1` at a 1920 × 1080 viewport. Demo 
 | 175–202 | 2.8 s | Aim the lamp: direction, then angle, then strength             |
 | 203–214 | 1.2 s | Fullscreen                                                     |
 | 215–252 | 3.8 s | The duck walks, turning all the way round                      |
-| 253–264 | 1.2 s | Fit the roller skates                                          |
+| 253–264 | 1.2 s | Fit the skates; the feet they replace lie beside the duck      |
 | 265–294 | 3.0 s | Cruise, then accelerate                                        |
 | 295–314 | 2.0 s | Brake                                                          |
 | 315–326 | 1.2 s | A head shake on the skates                                     |
