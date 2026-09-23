@@ -411,6 +411,8 @@ export class Viewer {
   private selected: string | null = null;
   /** Which set of feet is fitted: the model stands as built, or on its clip-on skates. */
   private module: ModuleName = 'walk';
+  /** Set once a recording takes over the motion clock. */
+  private manualClock = false;
   private isolated: string | null = null;
   private hardwareVisible = true;
   private down = { x: 0, y: 0 };
@@ -544,7 +546,7 @@ export class Viewer {
       this.lastFrame = now;
       const step = Math.min(delta, 0.1);
       this.updateLightHint(step);
-      if (this.motion) {
+      if (this.motion && !this.manualClock) {
         this.motionClock += step;
         const target = poseAt(this.motionClock, this.motion, this.legs || undefined);
         this.blendClock += step;
@@ -766,6 +768,23 @@ export class Viewer {
     const L = build('L');
     const R = build('R');
     return L && R ? { L, R } : null;
+  }
+  /**
+   * Advance the motion by hand. A recording captures a frame every second or so of wall clock
+   * but replays them a tenth of a second apart, so letting the clock run on its own would play
+   * every action back at many times its real speed.
+   */
+  stepMotion(seconds: number) {
+    this.manualClock = true;
+    if (!this.motion) return;
+    this.motionClock += seconds;
+    this.blendClock += seconds;
+    const target = poseAt(this.motionClock, this.motion, this.legs || undefined);
+    this.applyPose(
+      this.blendFrom ? blendPose(this.blendFrom, target, this.blendClock / BLEND_SECONDS) : target,
+    );
+    this.lastPose = target;
+    if (this.blendFrom && this.blendClock >= BLEND_SECONDS) this.blendFrom = null;
   }
   /** Play a motion, or the default walk-and-pause loop. */
   play(motion: MotionName | 'sequence' = 'sequence') {
@@ -1110,12 +1129,24 @@ export class Viewer {
     this.lastLighting = lighting;
     this.lastRig = rig;
   }
+  /**
+   * The one place the camera is written. A framing that is not finite is refused outright: the
+   * orbit controls read back the position they wrote, so a single NaN sticks for good and the
+   * scene renders nowhere from then on.
+   */
+  private placeCamera(position: THREE.Vector3, target: THREE.Vector3) {
+    if (![...position.toArray(), ...target.toArray()].every(Number.isFinite)) return false;
+    this.camera.position.copy(position);
+    this.controls.target.copy(target);
+    this.controls.update();
+    return true;
+  }
   orbit(azimuth: number, elevation: number) {
     const d = this.camera.position.distanceTo(this.controls.target);
     const a = (azimuth * Math.PI) / 180,
       e = (elevation * Math.PI) / 180;
-    this.camera.position
-      .copy(this.controls.target)
+    const to = this.controls.target
+      .clone()
       .add(
         new THREE.Vector3(
           Math.sin(a) * Math.cos(e),
@@ -1123,7 +1154,7 @@ export class Viewer {
           Math.cos(a) * Math.cos(e),
         ).multiplyScalar(d),
       );
-    this.controls.update();
+    this.placeCamera(to, this.controls.target);
   }
   view(name: string) {
     const d = (this.size * 1.75) / Math.min(1, this.camera.aspect);
@@ -1138,9 +1169,7 @@ export class Viewer {
     const v = new THREE.Vector3(...(dirs[name] || dirs['three-quarter']))
       .normalize()
       .multiplyScalar(d);
-    this.camera.position.copy(this.center).add(v);
-    this.controls.target.copy(this.center);
-    this.controls.update();
+    this.placeCamera(this.center.clone().add(v), this.center.clone());
   }
   /**
    * Frame the given parts: a close-up on one assembly, keeping the direction the camera is
@@ -1165,9 +1194,7 @@ export class Viewer {
     // A camera sitting on its own target has no direction to keep; fall back to the model front.
     if (direction.lengthSq() < 1e-6) direction.set(1, 0.3, 0.6);
     direction.normalize();
-    this.controls.target.copy(center);
-    this.camera.position.copy(center).add(direction.multiplyScalar(distance));
-    this.controls.update();
+    this.placeCamera(center.clone().add(direction.multiplyScalar(distance)), center);
   }
   png() {
     const shown = this.box.visible;

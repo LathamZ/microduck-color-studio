@@ -1,6 +1,6 @@
 # README preview
 
-`docs/media/studio-demo.gif`: about 41.5 seconds, 415 recorded frames, 1280 × 720. Captures only the webpage viewport: no browser tabs, address bar or debugger overlays.
+`docs/media/studio-demo.gif`: about 41.5 seconds, 415 recorded frames, 1280 × 720. Captures only the webpage viewport: no browser tabs, address bar or debugger overlays. Demo mode drives the motion clock itself, one tenth of a second per captured frame, so every action plays back at the speed it really runs.
 
 To reproduce: serve the app and open `?demo=1` at a 1920 × 1080 viewport. Demo mode never reads or writes local palettes or inventory. Advance with Right arrow `DEMO_FRAMES` times (see `src/demo.ts`), capturing the viewport after each step, then encode as below. Example stock is for demonstration only.
 

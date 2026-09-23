@@ -194,6 +194,8 @@ export function setupDemo(
     if (e.key !== 'ArrowRight') return;
     e.preventDefault();
     frame++;
+    // The motion runs on the demo's own clock, so a frame of the recording is a frame of motion.
+    viewer.stepMotion(0.1);
     const within = (beat: number[]) => frame >= beat[0] && frame <= beat[1];
     const at = (beat: number[], offset = 0) => frame === beat[0] + offset;
     const span = (beat: number[]) => (frame - beat[0]) / (beat[1] - beat[0]);
@@ -217,13 +219,8 @@ export function setupDemo(
     });
     // 61-112: the torso, up close: a couple of colours by hand, then materials.
     if (frame === BEAT.select[0]) click(`[data-part="${body}"]`);
-    if (at(BEAT.select, 2))
-      glideTo(() => {
-        viewer.focus([body], 1.9);
-        viewer.orbit(frontAzimuth + 38, 12);
-      });
-    if (within(BEAT.select)) glideAt((frame - BEAT.select[0] - 2) / 10);
-    if (at(BEAT.select, 8)) click('#quick-colors button:nth-child(3)');
+    // The colour and material beats stay on the standard view: the push-in left the camera
+    // framing empty space, and a readable duck beats a close-up of nothing.
     // Four materials with plenty of daylight between them, so the change reads.
     ['matte-pla', 'silk-pla', 'metallic-petg', 'petg-cf'].forEach((material, index) => {
       if (at(BEAT.materials, 4 + index * 9)) {
