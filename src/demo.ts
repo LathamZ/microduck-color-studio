@@ -1,9 +1,10 @@
 /** Deterministic, isolated presentation mode for documentation recording.
  * Open ?demo=1. Right arrow advances one 100 ms frame. No local data is read or saved.
  *
- * The beats follow the storyboard in docs/recording.md: meet the duck, recolour it while it
- * turns, work on one part up close, walk through the light rigs, fill the screen for a walk,
- * then save the look and export the plates.
+ * The beats follow the storyboard in docs/recording.md: meet the duck, turn it while colours are
+ * applied one at a time, take a close-up of the torso for colour and materials, walk the light
+ * rigs, then two action beats — walking on its feet, and skating on its wheels — and finish on
+ * the scheme menu and a print export.
  */
 import { defaults, type Manifest, type Palette } from './domain';
 import type { Viewer } from './viewer';
@@ -11,26 +12,28 @@ import type { Inventory } from './recommend';
 
 /** Frame range of each beat, in 100 ms frames. */
 const BEAT = {
-  intro: [0, 8],
-  spin: [9, 42],
-  settle: [43, 48],
-  push: [49, 60],
-  recolour: [61, 82],
-  materials: [83, 102],
-  pullBack: [103, 112],
-  lights: [113, 138],
-  patterns: [139, 162],
-  shape: [163, 198],
-  fullscreen: [199, 210],
-  walk: [211, 268],
-  tilt: [269, 288],
-  exit: [289, 295],
-  looks: [296, 317],
-  print: [318, 357],
-  end: [358, 365],
+  intro: [0, 10],
+  turn: [11, 60],
+  select: [61, 74],
+  materials: [75, 112],
+  pullBack: [113, 126],
+  lights: [127, 152],
+  patterns: [153, 174],
+  shape: [175, 202],
+  fullscreen: [203, 214],
+  walk: [215, 252],
+  skates: [253, 264],
+  cruise: [265, 294],
+  brake: [295, 314],
+  shake: [315, 326],
+  exit: [327, 336],
+  looks: [337, 358],
+  print: [359, 404],
+  end: [405, 414],
 };
-/** 36.6 seconds at 10 frames a second. */
-export const DEMO_FRAMES = 366;
+export const DEMO_FRAMES = 415;
+/** Colours applied from the tray, one at a time, the way someone picks a scheme by hand. */
+const LOOKS = [1, 3, 5, 4, 2, 0, 3];
 
 export function setupDemo(
   model: Manifest,
@@ -122,18 +125,34 @@ export function setupDemo(
     viewer.controls.target.set(value[3], value[4], value[5]);
     viewer.controls.update();
   };
+  /** Ease in and out, so every move starts and ends without a jolt. */
+  const ease = (t: number) => {
+    const v = Math.max(0, Math.min(1, t));
+    return v * v * (3 - 2 * v);
+  };
   const glideTo = (move: () => void) => {
     from = cameraState();
     move();
     to = cameraState();
     applyCamera(from, to, 0);
   };
-  /** Ease in and out, so every move starts and ends without a jolt. */
-  const ease = (t: number) => {
-    const v = Math.max(0, Math.min(1, t));
-    return v * v * (3 - 2 * v);
-  };
   const glideAt = (t: number) => applyCamera(from, to, ease(t));
+  /** Where the camera stands now, as the angle `viewer.orbit` takes. */
+  const azimuthOf = () => {
+    const offset = viewer.camera.position.clone().sub(viewer.controls.target);
+    return (Math.atan2(offset.x, offset.z) * 180) / Math.PI;
+  };
+  /** The model decides which way it faces, so ask it instead of assuming an axis. */
+  const frontAzimuth = (() => {
+    const position = viewer.camera.position.clone();
+    const target = viewer.controls.target.clone();
+    viewer.view('front');
+    const found = azimuthOf();
+    viewer.camera.position.copy(position);
+    viewer.controls.target.copy(target);
+    viewer.controls.update();
+    return found;
+  })();
   /** A four-object 3MF, so the print dialog has something real to match. */
   const samplePrint = () => {
     const mesh =
@@ -162,47 +181,6 @@ export function setupDemo(
     document
       .querySelector(selector)
       ?.dispatchEvent(new MouseEvent(on ? 'mouseenter' : 'mouseleave', { bubbles: true }));
-  const mix = (from: string, to: string, t: number) => {
-    const parse = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    const [a, b] = [parse(from), parse(to)];
-    return (
-      '#' +
-      a
-        .map((v, i) =>
-          Math.round(v + (b[i] - v) * t)
-            .toString(16)
-            .padStart(2, '0'),
-        )
-        .join('')
-    );
-  };
-  /** Drive the part colour picker the way a hand does: an input per frame, then commit. */
-  const dragColour = (stops: string[], t: number) => {
-    const span = (stops.length - 1) * 12;
-    const scaled = Math.min(0.999, t) * span;
-    const index = Math.floor(scaled / 12);
-    const colour = mix(stops[index], stops[index + 1], (scaled % 12) / 12);
-    const input = document.getElementById('part-color') as HTMLInputElement | null;
-    if (!input) return;
-    input.value = colour;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  };
-  /** Where the camera stands now, as the angle `viewer.orbit` takes. */
-  const azimuthOf = () => {
-    const offset = viewer.camera.position.clone().sub(viewer.controls.target);
-    return (Math.atan2(offset.x, offset.z) * 180) / Math.PI;
-  };
-  /** The model decides which way it faces, so ask it instead of assuming an axis. */
-  const frontAzimuth = (() => {
-    const position = viewer.camera.position.clone();
-    const target = viewer.controls.target.clone();
-    viewer.view('front');
-    const found = azimuthOf();
-    viewer.camera.position.copy(position);
-    viewer.controls.target.copy(target);
-    viewer.controls.update();
-    return found;
-  })();
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowRight') return;
     e.preventDefault();
@@ -211,53 +189,53 @@ export function setupDemo(
     const at = (beat: number[], offset = 0) => frame === beat[0] + offset;
     const span = (beat: number[]) => (frame - beat[0]) / (beat[1] - beat[0]);
 
-    // 0-8: meet the duck, in the studio's own standard view. It stands still first.
+    // 0-10: meet the duck, in the studio's own standard view. It stands still first.
     if (frame === 0) {
       apply(base);
       viewer.select(null);
       viewer.view('three-quarter');
       spinFrom = azimuthOf();
     }
-    // 9-42: turn it and recolour it on the way round, easing up and easing to a stop.
-    if (within(BEAT.spin)) viewer.orbit(spinFrom + ease(span(BEAT.spin)) * 170, 14);
-    if (at(BEAT.spin, 5)) click('[data-preset="1"]');
-    if (at(BEAT.spin, 21)) click('[data-preset="3"]');
-    // 49-112: the torso, up close: recolour it by hand, then step through the materials.
-    if (frame === BEAT.settle[1]) click(`[data-part="${body}"]`);
-    // Close enough to read the surface, wide enough to keep the part in one piece, and swung
-    // round to look at it from the front while the camera comes in.
-    if (at(BEAT.push))
+    // 11-60: turn it, and apply colours from the tray one at a time as it goes — never a
+    // continuous slide, which is not how anyone picks a scheme. The camera stays in front of
+    // the duck so the torso being coloured is never hidden by its own back.
+    if (within(BEAT.turn)) {
+      const t = span(BEAT.turn);
+      viewer.orbit(spinFrom + Math.sin(t * Math.PI) * 55, 14);
+    }
+    LOOKS.forEach((preset, index) => {
+      if (at(BEAT.turn, 4 + index * 6)) click(`[data-preset="${preset}"]`);
+    });
+    // 61-112: the torso, up close: a couple of colours by hand, then materials.
+    if (frame === BEAT.select[0]) click(`[data-part="${body}"]`);
+    if (at(BEAT.select, 2))
       glideTo(() => {
         viewer.focus([body], 1.9);
         viewer.orbit(frontAzimuth + 38, 12);
       });
-    if (within(BEAT.push)) glideAt(span(BEAT.push));
-    if (at(BEAT.recolour)) aim('#part-color');
-    if (frame > BEAT.recolour[0] && frame < BEAT.recolour[1])
-      dragColour(
-        ['#F2C94C', '#F28C28', '#ECC6C5', '#3AC9BD', '#254D70'],
-        (frame - BEAT.recolour[0]) / (BEAT.recolour[1] - BEAT.recolour[0]),
-      );
-    if (frame === BEAT.recolour[1])
-      document.getElementById('part-color')?.dispatchEvent(new Event('change', { bubbles: true }));
-    if (within(BEAT.recolour) || within(BEAT.materials))
-      viewer.orbit(frontAzimuth + 38 + (frame - BEAT.recolour[0]) * 0.45, 12);
+    if (within(BEAT.select)) glideAt((frame - BEAT.select[0] - 2) / 10);
+    if (at(BEAT.select, 8)) click('#quick-colors button:nth-child(3)');
+    // Four materials with plenty of daylight between them, so the change reads.
     ['matte-pla', 'silk-pla', 'metallic-petg', 'petg-cf'].forEach((material, index) => {
-      if (at(BEAT.materials, index * 5)) {
+      if (at(BEAT.materials, 4 + index * 9)) {
         scrollTo(0);
         click(`[data-material="${material}"]`);
       }
     });
-    if (at(BEAT.pullBack)) glideTo(() => viewer.view('three-quarter'));
+    if (within(BEAT.materials)) viewer.orbit(frontAzimuth + 38 + (frame - BEAT.materials[0]) * 0.5, 12);
+    if (at(BEAT.pullBack))
+      glideTo(() => {
+        viewer.view('three-quarter');
+      });
     if (within(BEAT.pullBack)) glideAt(span(BEAT.pullBack));
-    // 113-162: the light rigs, then the film setups inside the cinema rig.
-    if (at(BEAT.lights, 1)) click('[data-light="daylight"]');
-    if (at(BEAT.lights, 8)) click('[data-light="warm"]');
-    if (at(BEAT.lights, 15)) click('[data-light="cinema"]');
+    // 127-202: the light rigs, then the film setups inside cinema.
+    if (at(BEAT.lights, 2)) click('[data-light="daylight"]');
+    if (at(BEAT.lights, 10)) click('[data-light="warm"]');
+    if (at(BEAT.lights, 18)) click('[data-light="cinema"]');
     ['butterfly', 'rembrandt', 'split', 'rim'].forEach((pattern, index) => {
-      if (at(BEAT.patterns, 1 + index * 6)) click(`[data-pattern="${pattern}"]`);
+      if (at(BEAT.patterns, 2 + index * 5)) click(`[data-pattern="${pattern}"]`);
     });
-    // 163-198: aim the lamp: direction, then angle, then strength.
+    // 175-202: aim the lamp: direction, then angle, then strength.
     if (at(BEAT.shape)) aim('#direction');
     if (frame > BEAT.shape[0] + 1 && frame <= BEAT.shape[0] + 10)
       setSlider('direction', -150 + (frame - BEAT.shape[0] - 1) * 25);
@@ -265,31 +243,32 @@ export function setupDemo(
       setSlider('elevation', 20 + (frame - BEAT.shape[0] - 12) * 8.5);
     if (frame > BEAT.shape[0] + 22 && frame <= BEAT.shape[0] + 27)
       setSlider('intensity', 40 + (frame - BEAT.shape[0] - 22) * 24);
-    if (frame > BEAT.shape[0] + 28 && frame <= BEAT.shape[0] + 34)
-      setSlider('intensity', 160 - (frame - BEAT.shape[0] - 28) * 10);
-    // 199-268: fullscreen, then a walk all the way round and back to the front.
+    // 203-252: fullscreen, then the duck walks.
     if (at(BEAT.fullscreen)) click('#fullscreen');
-    // Face the duck first, then walk it right the way round and stop where it started.
     if (at(BEAT.walk)) glideTo(() => viewer.orbit(frontAzimuth, 14));
-    if (frame >= BEAT.walk[0] && frame <= BEAT.walk[0] + 6) glideAt((frame - BEAT.walk[0]) / 6);
+    if (frame >= BEAT.walk[0] && frame <= BEAT.walk[0] + 6)
+      glideAt((frame - BEAT.walk[0]) / 6);
     if (at(BEAT.walk, 8)) hover('.motion-tools', true);
     if (at(BEAT.walk, 11)) click('[data-motion="walk"]');
     if (frame > BEAT.walk[0] + 11 && frame <= BEAT.walk[1])
-      viewer.orbit(
-        frontAzimuth + ease((frame - BEAT.walk[0] - 11) / (BEAT.walk[1] - BEAT.walk[0] - 11)) * 360,
-        14,
-      );
-    // 269-295: stop, tilt the head, and come back out of fullscreen.
-    if (at(BEAT.tilt)) click('#motion-toggle');
-    if (at(BEAT.tilt, 2)) hover('.motion-tools', true);
-    if (at(BEAT.tilt, 5)) click('[data-motion="tilt"]');
-    // Let the head come back level before leaving fullscreen, so the rest of the tour is still.
-    if (at(BEAT.tilt, 13)) {
-      hover('.motion-tools', false);
-      click('#motion-toggle');
+      viewer.orbit(frontAzimuth + ease((frame - BEAT.walk[0] - 11) / (BEAT.walk[1] - BEAT.walk[0] - 11)) * 360, 14);
+    // 253-326: swap to the skates, then skate, accelerate, brake and shake.
+    if (at(BEAT.skates)) click('#motion-toggle');
+    if (at(BEAT.skates, 3)) click('#module-toggle');
+    if (at(BEAT.skates, 8)) {
+      glideTo(() => viewer.orbit(frontAzimuth + 40, 14));
     }
+    if (frame >= BEAT.skates[0] + 8 && frame <= BEAT.skates[1]) glideAt((frame - BEAT.skates[0] - 8) / 4);
+    if (at(BEAT.cruise, 2)) hover('.motion-tools', true);
+    if (at(BEAT.cruise, 5)) click('[data-motion="skate"]');
+    if (at(BEAT.cruise, 16)) click('[data-motion="sprint"]');
+    if (frame >= BEAT.cruise[0] && frame <= BEAT.cruise[1] && frame > BEAT.cruise[0] + 5)
+      viewer.orbit(frontAzimuth + 40 + Math.sin((frame - BEAT.cruise[0]) * 0.09) * 26, 14);
+    if (at(BEAT.brake, 4)) click('[data-motion="brake"]');
+    if (at(BEAT.shake, 2)) click('[data-motion="shake"]');
+    if (at(BEAT.shake, 8)) hover('.motion-tools', false);
     if (at(BEAT.exit)) click('#fullscreen');
-    // 296-317: keep the look: save it, change it, then apply the saved one back.
+    // 337-358: keep the look: save it, change it, then apply the saved one back.
     if (at(BEAT.looks)) click('#looks-toggle');
     if (at(BEAT.looks, 3)) {
       const name = document.getElementById('looks-name') as HTMLInputElement | null;
@@ -304,7 +283,7 @@ export function setupDemo(
     if (at(BEAT.looks, 13)) click('#looks-toggle');
     if (at(BEAT.looks, 16)) click('[data-apply]');
     if (at(BEAT.looks, 20)) click('#looks-menu [data-close]');
-    // 318-357: export, with the print model matched against the look.
+    // 359-404: export, with the print model matched against the look.
     if (at(BEAT.print)) void samplePrint().then((bytes) => print.load(bytes, 'duck-plates.3mf'));
     if (at(BEAT.print, 10)) {
       click('#export-menu-toggle');
@@ -317,10 +296,10 @@ export function setupDemo(
         picker.dispatchEvent(new Event('change', { bubbles: true }));
       }
     }
-    if (at(BEAT.print, 22))
+    if (at(BEAT.print, 24))
       document.getElementById('print-object-list')?.scrollTo({ top: 260, behavior: 'auto' });
-    if (at(BEAT.print, 28))
+    if (at(BEAT.print, 32))
       document.getElementById('print-object-list')?.scrollTo({ top: 0, behavior: 'auto' });
-    if (at(BEAT.print, 32)) click('#print-plan');
+    if (at(BEAT.print, 38)) click('#print-plan');
   });
 }

@@ -1,6 +1,6 @@
 # README preview
 
-`docs/media/studio-demo.gif`: 36.6 seconds, 366 recorded frames (217 stored; identical frames are merged on encode), 1280 × 720, about 6.3 MB. Captures only the webpage viewport: no browser tabs, address bar or debugger overlays.
+`docs/media/studio-demo.gif`: about 41.5 seconds, 415 recorded frames, 1280 × 720. Captures only the webpage viewport: no browser tabs, address bar or debugger overlays.
 
 To reproduce: serve the app and open `?demo=1` at a 1920 × 1080 viewport. Demo mode never reads or writes local palettes or inventory. Advance with Right arrow `DEMO_FRAMES` times (see `src/demo.ts`), capturing the viewport after each step, then encode as below. Example stock is for demonstration only.
 
@@ -37,7 +37,7 @@ A recording runs headless, and a synthetic click is never granted the Fullscreen
 ## Encoding
 
 ```sh
-ffmpeg -framerate 10 -i frame-%03d.jpg -filter_complex 'fps=10,scale=1280:720:flags=lanczos,fade=t=in:st=0:d=0.4:color=0xeef0eb,fade=t=out:st=36.0:d=0.5:color=0xeef0eb,split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle' -loop 0 studio-demo.gif
+ffmpeg -framerate 10 -i frame-%03d.jpg -filter_complex 'fps=10,scale=1280:720:flags=lanczos,fade=t=in:st=0:d=0.4:color=0xeef0eb,fade=t=out:st=41.0:d=0.5:color=0xeef0eb,split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle' -loop 0 studio-demo.gif
 gifsicle -O3 --lossy=170 studio-demo.gif -o studio-demo.opt.gif && mv studio-demo.opt.gif studio-demo.gif
 ```
 
