@@ -6,25 +6,26 @@ To reproduce: serve the app and open `?demo=1` at a 1920 × 1080 viewport. Demo 
 
 ## Storyboard
 
-| Frames  |       | Beat                                                                      |
-| ------- | ----- | ------------------------------------------------------------------------- |
-| 0–8     | 0.9 s | The duck, in the studio's own standard view                               |
-| 9–42    | 3.4 s | Turn it while two palettes from the tray apply, easing to a stop          |
-| 43–48   | 0.6 s | The turn settles                                                          |
-| 49–60   | 1.2 s | Camera pushes in on the torso and swings to the front                     |
-| 61–82   | 2.2 s | Drag the part colour picker; the model follows live                       |
-| 83–102  | 2.0 s | Step through four materials on the same part, drifting so highlights move |
-| 103–112 | 1.0 s | Pull back out to the standard view                                        |
-| 113–138 | 2.6 s | Studio → daylight → warm → cinema                                         |
-| 139–162 | 2.4 s | Butterfly → Rembrandt → split → rim inside cinema                         |
-| 163–198 | 3.6 s | Aim the lamp: direction, then angle, then strength                        |
-| 199–210 | 1.2 s | Fullscreen                                                                |
-| 211–268 | 5.8 s | Walk, orbiting a full circle and stopping at the front                    |
-| 269–288 | 2.0 s | Stop, tilt the head, hold                                                 |
-| 289–295 | 0.7 s | Leave fullscreen                                                          |
-| 296–317 | 2.2 s | Save a look, change it, apply the saved one back                          |
-| 318–357 | 4.0 s | Import a 3MF, export, pick a printer, preview the plates                  |
-| 358–365 | 0.8 s | Hold on the plate preview                                                 |
+| Frames  |       | Beat                                                           |
+| ------- | ----- | -------------------------------------------------------------- |
+| 0–10    | 1.0 s | The duck, in the studio's own standard view                    |
+| 11–60   | 5.0 s | Turn it while colours are applied from the tray, one at a time |
+| 61–74   | 1.4 s | Push in on the torso and pick a reference colour               |
+| 75–112  | 3.8 s | Four materials in turn, drifting so highlights move            |
+| 113–126 | 1.4 s | Pull back out to the standard view                             |
+| 127–152 | 2.6 s | Studio → daylight → warm → cinema                              |
+| 153–174 | 2.2 s | Butterfly → Rembrandt → split → rim inside cinema              |
+| 175–202 | 2.8 s | Aim the lamp: direction, then angle, then strength             |
+| 203–214 | 1.2 s | Fullscreen                                                     |
+| 215–252 | 3.8 s | The duck walks, turning all the way round                      |
+| 253–264 | 1.2 s | Fit the roller skates                                          |
+| 265–294 | 3.0 s | Cruise, then accelerate                                        |
+| 295–314 | 2.0 s | Brake                                                          |
+| 315–326 | 1.2 s | A head shake on the skates                                     |
+| 327–336 | 1.0 s | Leave fullscreen                                               |
+| 337–358 | 2.2 s | Save a look, change it, apply the saved one back               |
+| 359–404 | 4.6 s | Import a 3MF, export, pick a printer, preview the plates       |
+| 405–414 | 1.0 s | Hold on the plate preview                                      |
 
 Camera moves are eased and the turn and walk ease in and out, so no beat starts or ends with a jolt. Every control is scrolled into view before it is used, and the recorded cursor shows where the click lands.
 
