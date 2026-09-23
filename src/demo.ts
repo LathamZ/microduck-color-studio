@@ -222,7 +222,8 @@ export function setupDemo(
         click(`[data-material="${material}"]`);
       }
     });
-    if (within(BEAT.materials)) viewer.orbit(frontAzimuth + 38 + (frame - BEAT.materials[0]) * 0.5, 12);
+    if (within(BEAT.materials))
+      viewer.orbit(frontAzimuth + 38 + (frame - BEAT.materials[0]) * 0.5, 12);
     if (at(BEAT.pullBack))
       glideTo(() => {
         viewer.view('three-quarter');
@@ -243,22 +244,32 @@ export function setupDemo(
       setSlider('elevation', 20 + (frame - BEAT.shape[0] - 12) * 8.5);
     if (frame > BEAT.shape[0] + 22 && frame <= BEAT.shape[0] + 27)
       setSlider('intensity', 40 + (frame - BEAT.shape[0] - 22) * 24);
+    // Before the action beats the stage goes back to a light that actually shows the duck:
+    // cinema with a rim setup and a lamp overhead leaves it a silhouette on black, which reads
+    // as an empty screen.
+    if (at(BEAT.shape, 24)) click('[data-pattern="butterfly"]');
+    if (at(BEAT.shape, 25)) click('[data-light="studio"]');
+    if (at(BEAT.shape, 26)) setSlider('direction', -35);
+    if (at(BEAT.shape, 27)) setSlider('intensity', 100);
     // 203-252: fullscreen, then the duck walks.
     if (at(BEAT.fullscreen)) click('#fullscreen');
     if (at(BEAT.walk)) glideTo(() => viewer.orbit(frontAzimuth, 14));
-    if (frame >= BEAT.walk[0] && frame <= BEAT.walk[0] + 6)
-      glideAt((frame - BEAT.walk[0]) / 6);
+    if (frame >= BEAT.walk[0] && frame <= BEAT.walk[0] + 6) glideAt((frame - BEAT.walk[0]) / 6);
     if (at(BEAT.walk, 8)) hover('.motion-tools', true);
     if (at(BEAT.walk, 11)) click('[data-motion="walk"]');
     if (frame > BEAT.walk[0] + 11 && frame <= BEAT.walk[1])
-      viewer.orbit(frontAzimuth + ease((frame - BEAT.walk[0] - 11) / (BEAT.walk[1] - BEAT.walk[0] - 11)) * 360, 14);
+      viewer.orbit(
+        frontAzimuth + ease((frame - BEAT.walk[0] - 11) / (BEAT.walk[1] - BEAT.walk[0] - 11)) * 360,
+        14,
+      );
     // 253-326: swap to the skates, then skate, accelerate, brake and shake.
     if (at(BEAT.skates)) click('#motion-toggle');
     if (at(BEAT.skates, 3)) click('#module-toggle');
     if (at(BEAT.skates, 8)) {
       glideTo(() => viewer.orbit(frontAzimuth + 40, 14));
     }
-    if (frame >= BEAT.skates[0] + 8 && frame <= BEAT.skates[1]) glideAt((frame - BEAT.skates[0] - 8) / 4);
+    if (frame >= BEAT.skates[0] + 8 && frame <= BEAT.skates[1])
+      glideAt((frame - BEAT.skates[0] - 8) / 4);
     if (at(BEAT.cruise, 2)) hover('.motion-tools', true);
     if (at(BEAT.cruise, 5)) click('[data-motion="skate"]');
     if (at(BEAT.cruise, 16)) click('[data-motion="sprint"]');
