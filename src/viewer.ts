@@ -1161,7 +1161,10 @@ export class Viewer {
       this.controls.minDistance,
       (radius / Math.sin((this.camera.fov * Math.PI) / 360)) * fill,
     );
-    const direction = this.camera.position.clone().sub(this.controls.target).normalize();
+    const direction = this.camera.position.clone().sub(this.controls.target);
+    // A camera sitting on its own target has no direction to keep; fall back to the model front.
+    if (direction.lengthSq() < 1e-6) direction.set(1, 0.3, 0.6);
+    direction.normalize();
     this.controls.target.copy(center);
     this.camera.position.copy(center).add(direction.multiplyScalar(distance));
     this.controls.update();

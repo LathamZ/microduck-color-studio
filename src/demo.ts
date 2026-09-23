@@ -121,9 +121,13 @@ export function setupDemo(
   ];
   const applyCamera = (a: number[], b: number[], t: number) => {
     const value = a.map((n, i) => n + (b[i] - n) * t);
+    // A camera coordinate that is not a number puts the scene nowhere and never comes back:
+    // the orbit controls read the position they wrote and keep the NaN. Refuse the write.
+    if (!value.every((n) => Number.isFinite(n))) return false;
     viewer.camera.position.set(value[0], value[1], value[2]);
     viewer.controls.target.set(value[3], value[4], value[5]);
     viewer.controls.update();
+    return true;
   };
   /** Ease in and out, so every move starts and ends without a jolt. */
   const ease = (t: number) => {
@@ -131,10 +135,15 @@ export function setupDemo(
     return v * v * (3 - 2 * v);
   };
   const glideTo = (move: () => void) => {
-    from = cameraState();
+    const before = cameraState();
+    from = before;
     move();
     to = cameraState();
-    applyCamera(from, to, 0);
+    // If the framing we landed on is broken, keep the camera where it safely was.
+    if (!applyCamera(from, to, 0)) {
+      to = before;
+      applyCamera(from, to, 0);
+    }
   };
   const glideAt = (t: number) => applyCamera(from, to, ease(t));
   /** Where the camera stands now, as the angle `viewer.orbit` takes. */
