@@ -218,6 +218,13 @@ function syncMotion() {
         ? `停止动作（当前：${playing === 'sequence' ? '循环播放' : MOTION_LABELS[playing]}）`
         : '让它动起来';
   toggle.setAttribute('aria-label', toggle.title);
+  // The other direction of the same gate: spreading the parts while an action runs would pull
+  // them out from under the pose, so the slider stays out of reach until the duck stops.
+  const explode = $<HTMLInputElement>('#explode');
+  const explodeLabel = document.querySelector<HTMLElement>('label[for="explode"]');
+  explode.disabled = !!playing;
+  explodeLabel?.classList.toggle('disabled', !!playing);
+  if (explodeLabel) explodeLabel.title = playing ? '动作播放时不展开零件' : '';
   document
     .querySelectorAll<HTMLElement>('[data-motion]')
     .forEach((b) => b.classList.toggle('active', motion === b.dataset.motion && !!playing));
@@ -636,6 +643,8 @@ function bind() {
       )
         viewer.stopMotion();
       syncModule();
+      // The swap can stop the action, which opens the explode gate again.
+      syncMotion();
       drawList();
       update();
       toast(module === 'skate' ? '已换上轮滑模组' : '已换回步行脚');

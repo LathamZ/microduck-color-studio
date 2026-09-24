@@ -497,6 +497,7 @@ export const english: Record<string, string> = {
   '）': ')',
   零件展开时不播放动作: 'No motion while parts are exploded',
   '零件展开时不播放动作，收起后再试': 'Parts are exploded — collapse them to play an action',
+  动作播放时不展开零件: 'No exploded view while a motion plays',
   '循环播放（默认）': 'Play the loop (default)',
   循环播放全部动作: 'Playing the full action loop',
   '动作：': 'Action: ',

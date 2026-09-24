@@ -29,6 +29,8 @@ To reproduce: serve the app and open `?demo=1` at a 1920 × 1080 viewport. Demo 
 
 Camera moves are eased and the turn and walk ease in and out, so no beat starts or ends with a jolt. Every control is scrolled into view before it is used, and the recorded cursor shows where the click lands.
 
+While an action plays, the set of parts that is not fitted — the skates, or the feet they replaced — fades out and the camera draws in to the duck, and both come back when the action stops. The walk and skating beats are recorded with that behaviour, so the spare set is only on screen in the beats where nothing is playing.
+
 The encode fades the first and last frames through the page's own background, so the file loops without a hard cut: the last frame matches the first.
 
 ## Fullscreen in the recording

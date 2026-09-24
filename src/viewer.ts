@@ -26,6 +26,9 @@ import {
   type Pose,
 } from './motion';
 import { motionJoints, type MotionJointSpec } from './models/active';
+/** How long the spare set takes to come and go, and for the camera to reframe with it. */
+const SPARE_SECONDS = 0.5;
+const FRAMING_SECONDS = 0.7;
 export type MaterialPreset = {
   roughness: number;
   metalness: number;
@@ -421,6 +424,23 @@ export class Viewer {
   private down = { x: 0, y: 0 };
   private size = 300;
   private center = new THREE.Vector3();
+  /** The two framings of the stage: the duck on its own, and the duck with its spare set. */
+  private duckFrame = { center: new THREE.Vector3(), size: 300 };
+  private stageFrame = { center: new THREE.Vector3(), size: 300 };
+  /** 0 while the spare set is out on the floor, 1 once an action has cleared it away. */
+  private spareHide = 0;
+  private spareWanted = 0;
+  /** Where the spare set rests, and how tall it is, so the fade can drop it from there. */
+  private spareFloor = 0;
+  private spareDrop = 0;
+  /** The camera's own move between those framings, so it slides instead of cutting. */
+  private framingMove: {
+    target: THREE.Vector3;
+    from: THREE.Vector3;
+    distance: number;
+    fromDistance: number;
+    t: number;
+  } | null = null;
   private mobile = mobilePreview();
   private layerTexture: THREE.CanvasTexture;
   constructor(
@@ -549,6 +569,8 @@ export class Viewer {
       this.lastFrame = now;
       const step = Math.min(delta, 0.1);
       this.updateLightHint(step);
+      // A recording steps the stage on its own clock, so it must not advance here as well.
+      if (!this.manualClock) this.advanceStage(step);
       if (this.motion && !this.manualClock) {
         this.motionClock += step;
         const target = poseAt(this.motionClock, this.motion, this.legs || undefined);
@@ -590,13 +612,111 @@ export class Viewer {
     this.buildLightHint();
     // Fit a module before framing: what is laid out beside the duck is part of what must fit.
     await this.setModule(this.module);
-    const bounds = new THREE.Box3();
-    for (const [, mesh] of this.meshes) if (mesh.visible) bounds.expandByObject(mesh);
-    bounds.getCenter(this.center);
-    this.size = bounds.getSize(new THREE.Vector3()).length();
     this.controls.target.copy(this.center);
-    this.restage();
     this.view('three-quarter');
+  }
+  /**
+   * Measure both framings of the stage: the duck on its own, which is what the camera fits while
+   * an action plays, and the duck with the set that is not fitted laid out beside it.
+   */
+  private measureFraming() {
+    const box = (withSpare: boolean) => {
+      const b = new THREE.Box3();
+      for (const [id, mesh] of this.meshes) {
+        if (!withSpare && this.spareIds.has(id)) continue;
+        b.expandByObject(mesh);
+      }
+      return b;
+    };
+    for (const [frame, withSpare] of [
+      [this.stageFrame, true],
+      [this.duckFrame, false],
+    ] as const) {
+      const b = box(withSpare);
+      if (b.isEmpty()) continue;
+      b.getCenter(frame.center);
+      frame.size = b.getSize(new THREE.Vector3()).length();
+    }
+    this.applyFraming();
+  }
+  /** Put the stage where the spare set's comings and goings have left it. */
+  private applyFraming() {
+    this.center.copy(this.duckFrame.center).lerp(this.stageFrame.center, 1 - this.spareHide);
+    this.size = this.duckFrame.size * this.spareHide + this.stageFrame.size * (1 - this.spareHide);
+  }
+  /**
+   * The spare set gets out of the way while the duck is doing something: an action is the duck's
+   * moment, and the set lying on the floor is only in the shot for colouring. It fades out and
+   * sinks a little as it goes, and the camera pulls in to the duck on the same clock.
+   */
+  private setSpareAside(aside: boolean) {
+    this.spareWanted = aside ? 1 : 0;
+    const from = this.controls.target.clone();
+    const target = (aside ? this.duckFrame : this.stageFrame).center.clone();
+    const frame = aside ? this.duckFrame : this.stageFrame;
+    const here = aside ? this.stageFrame : this.duckFrame;
+    this.framingMove = {
+      target,
+      from,
+      distance: this.camera.position.distanceTo(this.controls.target) * (frame.size / here.size),
+      fromDistance: this.camera.position.distanceTo(this.controls.target),
+      t: 0,
+    };
+  }
+  /** One tick of the spare set's fade and the camera's move, on the caller's clock. */
+  private advanceStage(seconds: number) {
+    if (this.spareWanted !== this.spareHide) {
+      const step = seconds / SPARE_SECONDS;
+      this.spareHide =
+        this.spareWanted > this.spareHide
+          ? Math.min(this.spareWanted, this.spareHide + step)
+          : Math.max(this.spareWanted, this.spareHide - step);
+      this.applySpareFade();
+    }
+    if (this.framingMove) {
+      const move = this.framingMove;
+      move.t = Math.min(1, move.t + seconds / FRAMING_SECONDS);
+      const k = move.t * move.t * (3 - 2 * move.t);
+      const target = move.from.clone().lerp(move.target, k);
+      const distance = move.fromDistance + (move.distance - move.fromDistance) * k;
+      const offset = this.camera.position.clone().sub(this.controls.target);
+      // A camera sitting on its own target has no direction to keep: fall back to the front.
+      if (offset.lengthSq() < 1e-6) offset.set(0.9, 0.4, 1.4);
+      this.placeCamera(target.clone().add(offset.normalize().multiplyScalar(distance)), target);
+      if (move.t >= 1) this.framingMove = null;
+    }
+  }
+  /**
+   * Fade the spare set, and sink it as it goes, so it reads as clearing the stage. The sinking
+   * is not only decoration: three.js cannot fade a shadow — the depth pass copies a material's
+   * alphaTest but not its opacity — so a part dissolving in place would keep a full-strength
+   * shadow and then lose it in one frame. A floor is nearer the lamp than anything under it, so
+   * a part that goes below the floor stops being shadowed, and the shadow leaves with it.
+   */
+  private applySpareFade() {
+    const k = this.spareHide;
+    this.spare.visible = k < 0.999;
+    this.spare.position.y = this.spareFloor - k * this.spareDrop;
+    // Every mesh, not only the spare ones. A module swap moves parts between the two groups, and
+    // the opacity they were left with travels with them: the set that was hidden would walk on
+    // stage invisible, and the set that walked off would come back still wearing its fade.
+    for (const [id, mesh] of this.meshes) {
+      const fade = this.spareIds.has(id) ? k : 0;
+      const material = mesh.material as THREE.MeshPhysicalMaterial;
+      material.opacity = 1 - fade;
+      material.depthWrite = fade < 0.5;
+      // Transparency is baked into the program, not only into the blend state: a material
+      // compiled while it was opaque carries `#define OPAQUE`, which pins the fragment's alpha to
+      // one and swallows the fade whole. Flipping the flag is therefore not enough on its own —
+      // it has to ask for the program again. The parts share one program per layer setting, so
+      // this rebuilds two at most, and only on the frame the fade starts or ends.
+      const transparent = fade > 0.001;
+      if (material.transparent !== transparent) {
+        material.transparent = transparent;
+        material.needsUpdate = true;
+      }
+    }
+    this.applyFraming();
   }
   apply(palette: Palette, layers: boolean) {
     for (const [id, mesh] of this.meshes) {
@@ -760,7 +880,10 @@ export class Viewer {
     const centre = box.getCenter(new THREE.Vector3());
     // Whatever the duck is standing on right now is what sets the floor.
     const floor = (this.joints.get('ankleL')?.pivot.y ?? 0) - (this.legs?.L.ankleToSole ?? 25);
-    this.spare.position.set(0, floor - box.min.y, -(170 + size.z / 2) - centre.z);
+    this.spareFloor = floor - box.min.y;
+    // How far it has to go down to be entirely under the floor: that is what takes its shadow.
+    this.spareDrop = size.y + 6;
+    this.spare.position.set(0, this.spareFloor, -(170 + size.z / 2) - centre.z);
     // Refresh again: everything that reads a world matrix next — the stage bounds, the shadow
     // camera — would otherwise still see the set where it was before it was moved aside.
     this.spare.updateMatrixWorld(true);
@@ -812,6 +935,8 @@ export class Viewer {
    */
   stepMotion(seconds: number) {
     this.manualClock = true;
+    // The stage keeps its own clock too: the spare set comes and goes on the recorded timeline.
+    this.advanceStage(seconds);
     if (!this.motion) return;
     this.motionClock += seconds;
     this.blendClock += seconds;
@@ -829,9 +954,11 @@ export class Viewer {
     this.motionClock = 0;
     this.blendClock = 0;
     this.stopping = false;
+    this.setSpareAside(true);
   }
   stopMotion() {
     if (!this.motion && !this.stopping) return;
+    this.setSpareAside(false);
     if (this.playing) this.blendFrom = this.lastPose;
     this.motion = null;
     this.blendClock = 0;
@@ -1090,6 +1217,13 @@ export class Viewer {
     this.applyVisibility();
     this.legs = this.measureLegs();
     this.layoutSpare();
+    // Fit a module, then frame it: the set that was swapped changes both framings, so measuring
+    // them here is what keeps the camera fitted to the duck that is actually on the stage. It
+    // has to happen before the fade below, which sinks the spare out of the shot it is in.
+    this.measureFraming();
+    // The two sets have swapped roles, so the fade has to be re-applied to both: without this a
+    // swap made while an action plays leaves the new spare hidden and the new fitted set clear.
+    this.applySpareFade();
     this.select(this.selected);
     this.restage();
   }
@@ -1196,8 +1330,13 @@ export class Viewer {
     this.controls.update();
     return true;
   }
+  /**
+   * Turn to a bearing and look at whatever the stage is framed on. The distance comes from the
+   * framing as well, so a scripted tour stays in step as the spare set comes and goes.
+   */
   orbit(azimuth: number, elevation: number) {
-    const d = this.camera.position.distanceTo(this.controls.target);
+    this.controls.target.copy(this.center);
+    const d = (this.size * 1.75) / Math.min(1, this.camera.aspect);
     const a = (azimuth * Math.PI) / 180,
       e = (elevation * Math.PI) / 180;
     const to = this.controls.target
