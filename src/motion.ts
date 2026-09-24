@@ -192,19 +192,33 @@ const GROUND = -106.5;
  * contact from sliding. A body rolling onto its back pivots on its heels, then its rump, then
  * its shoulders — the contact moves, so no single fixed pivot can express it.
  */
-function restOnFloor(angle: number, points: Vec2[]) {
+/**
+ * How near the floor a point has to be to hold the body back, in millimetres. Generous on
+ * purpose: the body sliding from one contact onto the next should be a move, not a step.
+ */
+const ANCHOR_SPAN = 14;
+function restOnFloor(angle: number, points: Vec2[], pin?: { at: Vec2; x: number }) {
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  const at = (p: Vec2) => PIVOT[1] + (p[0] - PIVOT[0]) * sin + (p[1] - PIVOT[1]) * cos;
+  const at = (p: Vec2): Vec2 => [
+    PIVOT[0] + (p[0] - PIVOT[0]) * cos - (p[1] - PIVOT[1]) * sin,
+    PIVOT[1] + (p[0] - PIVOT[0]) * sin + (p[1] - PIVOT[1]) * cos,
+  ];
   let lowest = Infinity;
-  let contact = points[0];
-  for (const p of points)
-    if (at(p) < lowest) {
-      lowest = at(p);
-      contact = p;
-    }
-  const rolledX = PIVOT[0] + (contact[0] - PIVOT[0]) * cos - (contact[1] - PIVOT[1]) * sin;
-  return { dx: contact[0] - rolledX, dy: GROUND - lowest };
+  for (const p of points) lowest = Math.min(lowest, at(p)[1]);
+  // The body is carried by whatever is nearest the floor, and every near contact holds it back
+  // a little. Picking the one lowest point instead would make the body jump sideways the
+  // instant the weight moved from one contact to the next. A contact holds the body at its own
+  // place on the body — a part that is not moving does not slide — unless it is pinned, which
+  // is for a contact that is itself moving over the ground and must stay put anyway.
+  let weight = 0;
+  let anchor = 0;
+  for (const p of points) {
+    const w = Math.exp(-(at(p)[1] - lowest) / ANCHOR_SPAN);
+    weight += w;
+    anchor += w * ((pin && p === pin.at ? pin.x : p[0]) - at(p)[0]);
+  }
+  return { dx: anchor / weight, dy: GROUND - lowest };
 }
 /** How much of the cycle a leg spends in the air: 0 while planted, 1 at mid-swing. */
 function swingWeight(phase: number): number {
@@ -260,7 +274,6 @@ export function walk(t: number, legs?: Legs): Pose {
 export const SIT_SECONDS = 6.4;
 export const KICK_SECONDS = 2.6;
 export const GRAB_SECONDS = 5.2;
-export const RECOVER_SECONDS = 9.2;
 /**
  * Sit and stand: the trunk settles onto its haunches while the legs fold under it, holds, then
  * pushes back up. The feet never move — the hips come down to them, and the leg servos fold by
@@ -328,51 +341,149 @@ export function grab(t: number, legs?: { L: LegGeometry; R: LegGeometry }): Pose
   };
 }
 export const RECOVER_FALL = 0.8;
-export const RECOVER_ROCK = 4.6;
-export const RECOVER_UP = 1.9;
+export const RECOVER_DOWN = 1;
+export const RECOVER_PRESS = 1.4;
+export const RECOVER_UP = 2.4;
+export const RECOVER_SETTLE = 1.2;
+export const RECOVER_SECONDS =
+  RECOVER_FALL + RECOVER_DOWN + RECOVER_PRESS + RECOVER_UP + RECOVER_SETTLE;
+/** The neck's own geometry in the trunk's frame: the two joints it turns about. */
+const NECK_BASE: Vec2 = [26, 32.5];
+const NECK_PITCH: Vec2 = [26, 82.3];
+/** The back-top corner of the head: what lands on the floor when the neck folds over. */
+const HEAD_BACK: Vec2 = [-30.4, 157.4];
+/** How much further the neck leans on the head once it is down, and how far it straightens. */
+const FOLD_PRESS = 0.22;
+const FOLD_RISE = 0.8;
+/** How the fold is shared between the neck's two joints: the base turns, the pitch curls. */
+const CURL = 0.55;
+/** Past this the head has swung under the body and is coming back up, so the search stays here. */
+const FOLD_ON_FLOOR = 1.4;
+/** How far the sole reaches behind and ahead of the ankle, measured off the foot. */
+const HEEL = -19.9;
+const TOE = 34;
+/** Corners of the trunk, which take the weight whenever the duck is not on its feet. */
+const TRUNK_POINTS: Vec2[] = [
+  [-47, -39],
+  [-46, 42],
+  [35, 0],
+];
+/** The head's back corner for a neck folded over by `fold` and curled by `curl`. */
+function headCorner(fold: number, curl: number): Vec2 {
+  const over = rotate([HEAD_BACK[0] - NECK_PITCH[0], HEAD_BACK[1] - NECK_PITCH[1]], curl);
+  const bent = rotate(
+    [NECK_PITCH[0] + over[0] - NECK_BASE[0], NECK_PITCH[1] + over[1] - NECK_BASE[1]],
+    fold,
+  );
+  return [NECK_BASE[0] + bent[0], NECK_BASE[1] + bent[1]];
+}
+/** Where the trunk sits while it lies on its back. */
+const FALL_ANGLE = 1.52;
 /**
- * Knocked onto its back, then up again. Three things make this behave like a body rather than
- * like a lid on a hinge:
+ * The ankle as built, read off the linkage: `x` is where it sits along the trunk, `y` how far
+ * below the hip. The ankle is well behind the hip, so a target that only says "level with the
+ * hip" would put the foot 36 mm forward of where the duck actually stands.
+ */
+const ankleBuilt = (legs?: Legs): Vec2 => [
+  legs ? legs.L.hipToKnee[0] + legs.L.kneeToAnkle[0] : 0,
+  legs ? legs.L.hipToKnee[1] + legs.L.kneeToAnkle[1] : 0,
+];
+/**
+ * The head lands where it lands. Both the fold that puts it on the floor and the spot it
+ * touches are read off the lying pose once, so the press can hold the head exactly where it
+ * arrived — the neck folding further is then what lifts the body, and the head never skates
+ * across the floor while it does.
+ */
+const HEAD_LANDS = (() => {
+  const rump = restOnFloor(FALL_ANGLE, TRUNK_POINTS);
+  const reach = (fold: number) => {
+    const corner = headCorner(fold, CURL * fold);
+    const r = rotate([corner[0] - PIVOT[0], corner[1] - PIVOT[1]], FALL_ANGLE);
+    return { y: PIVOT[1] + r[1] + rump.dy, x: PIVOT[0] + r[0] + rump.dx };
+  };
+  let lo = 0;
+  let hi = FOLD_ON_FLOOR;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (reach(mid).y > GROUND) lo = mid;
+    else hi = mid;
+  }
+  return { fold: (lo + hi) / 2, ...reach((lo + hi) / 2) };
+})();
+/**
+ * Knocked onto its back, then up again the only way a duck with a neck this long can do it: it
+ * rolls its head back, presses the back of its head onto the floor and rides its own neck up
+ * until its feet are under it again. It cannot simply stand back up — its legs are in the air.
  *
- * - it turns about the heel it is standing on — the rearmost thing touching the floor — so that
- *   contact stays exactly where it is and nothing swings below the ground on the way over;
+ * Three things make this behave like a body rather than a lid on a hinge:
+ *
+ * - it turns about whatever is actually touching the floor — the soles, then the rump, then the
+ *   back of its head, then the soles again — so nothing swings below the ground on the way over;
  * - the fall accelerates into the floor the way gravity makes it, instead of easing down;
- * - getting up is the legs reaching for the floor and the body rocking until it carries back
- *   over, not the fall played backwards.
+ * - the press is what lifts it. Folding the neck further drives the head down, and the body
+ *   rides up on it: the head stays on the floor, the trunk comes up over it, and the feet reach
+ *   for the floor underneath. The head only leaves the ground once they are carrying it.
  */
 export function recover(t: number, legs?: Legs): Pose {
   const fall = Math.min(1, (t / RECOVER_FALL) ** 2);
-  const rising =
-    t <= RECOVER_FALL + RECOVER_ROCK ? 0 : smooth((t - RECOVER_FALL - RECOVER_ROCK) / RECOVER_UP);
-  // Rocking, growing and fading across the time it spends down.
-  const window =
-    t > RECOVER_FALL && t < RECOVER_FALL + RECOVER_ROCK
-      ? Math.sin(((t - RECOVER_FALL) / RECOVER_ROCK) * Math.PI)
-      : 0;
-  const rock = 0.14 * window * (1 - rising) * Math.sin((t - RECOVER_FALL) * 3.4);
-  const down = Math.min(1, Math.max(0, fall * (1 - rising) + rock));
-  const angle = 1.52 * down;
-  // Legs cycle against thin air while it is down. Once the body is on its back its own
-  // "forward" points at the sky, so reaching the feet out ahead is what lifts them up.
-  const struggle = down * Math.sin(t * 5.6) ** 2;
-  const air = 30 * down + 12 * struggle;
-  const { dx, dy } = restOnFloor(angle, [
-    // Where the feet have been solved to, and the corners of the trunk.
-    [HIP_X + air, GROUND + 7 * struggle],
-    [HIP_X + air - 9 * struggle, GROUND - 5 * struggle],
-    [-47, -39],
-    [-46, 42],
-    [35, -1],
-  ]);
+  const down = smooth((t - RECOVER_FALL) / RECOVER_DOWN);
+  const press = smooth((t - RECOVER_FALL - RECOVER_DOWN) / RECOVER_PRESS);
+  const rise = smooth((t - RECOVER_FALL - RECOVER_DOWN - RECOVER_PRESS) / RECOVER_UP);
+  const settle = smooth(
+    (t - RECOVER_FALL - RECOVER_DOWN - RECOVER_PRESS - RECOVER_UP) / RECOVER_SETTLE,
+  );
+  // Over onto its back and held there while the neck gathers, then up on the head. The neck
+  // unfolds over the second half of the rise, so the head is off the floor before the legs
+  // take the weight and the duck is left standing as built.
+  const angle = FALL_ANGLE * fall * (1 - 0.84 * rise - 0.16 * settle);
+  // The neck folds the head down to the floor and leans on it, then straightens: with the head
+  // pinned, unfolding is what drives the trunk up and forward, which is the whole way up this
+  // duck has. Folding further would only drag the body back along the floor.
+  const fold = Math.max(0, (HEAD_LANDS.fold + FOLD_PRESS) * press - FOLD_RISE * rise);
+  const curl = CURL * fold;
+  const head = headCorner(fold, curl);
+  // Legs cycle against thin air while it is down: once the body is on its back its own
+  // "forward" points at the sky, so reaching the feet out ahead is what lifts them up. As it
+  // starts to rise they swing back under the hips and take the floor again.
+  const struggle = down * (1 - press) * Math.sin(t * 5.6) ** 2;
+  const reach = smooth((rise - 0.08) / 0.55);
+  const rest = legs ? legs.L.hipToKnee[1] + legs.L.kneeToAnkle[1] : 0;
+  const soleDrop = legs?.L.ankleToSole ?? 25;
+  const built = ankleBuilt(legs);
+  // Both the ankle target and the sole it carries are in the trunk's frame, so the floor has to
+  // be told about them exactly where they are: a foot placed a millimetre out of true reads as
+  // a sole through the floor once the body is leaning.
+  const ankleAt = (i: number): Vec2 => {
+    // Planted is the leg as built, which is how the duck ends the action standing: the body is
+    // then placed on the soles rather than the soles on the body.
+    const air: Vec2 = [built[0] + 55 * down + [16, 6][i] * struggle, [7, -5][i] * struggle];
+    return [air[0] + (built[0] - air[0]) * reach, air[1] * (1 - reach)];
+  };
+  const ground = restOnFloor(
+    angle,
+    [
+      head,
+      ...TRUNK_POINTS,
+      // A sole is a footprint, not a point: leaning the trunk tips it, and it is the heel or
+      // the toe that reaches the floor first.
+      ...[0, 1].flatMap((i) => {
+        const ankle = ankleAt(i);
+        const y = HIP_Y + rest + ankle[1] - soleDrop;
+        return [[HIP_X + ankle[0] + HEEL, y] as Vec2, [HIP_X + ankle[0] + TOE, y] as Vec2];
+      }),
+    ],
+    // While the head is on the floor it is the neck folding that moves the body, not the head.
+    fold > 0 ? { at: head, x: HEAD_LANDS.x } : undefined,
+  );
   return {
-    root: { z: angle, dx, dy },
-    // The neck goes limp on the way over so the head rides up rather than scraping.
-    neckBase: { angle: -0.34 * down - 0.12 * struggle },
-    neckPitch: { angle: -0.3 * down },
-    headPitch: { angle: 0.24 * struggle },
+    root: { z: angle, dx: ground.dx, dy: ground.dy },
+    // The head goes over on the neck, and the jaw works while it struggles.
+    neckBase: { angle: fold + 0.06 * struggle * Math.sin(t * 7) },
+    neckPitch: { angle: curl },
+    headPitch: { angle: 0.12 * struggle - 0.1 * settle },
     jaw: { angle: -0.22 * struggle },
-    ...legAt('L', [air, 7 * struggle], legs?.L),
-    ...legAt('R', [air - 9 * struggle, -5 * struggle], legs?.R),
+    ...legAt('L', ankleAt(0), legs?.L),
+    ...legAt('R', ankleAt(1), legs?.R),
   };
 }
 /** One skate stride, in seconds. */

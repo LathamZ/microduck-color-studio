@@ -25,7 +25,23 @@ const LEGS = { L: LEG, R: LEG };
 const HIP_Y = -17.5;
 const GROUND = -106.5;
 /** The trunk's pivot, which a whole-body roll turns about. */
-const PIVOT_Y = -1;
+const PIVOT = [-6.2, -1];
+const PIVOT_Y = PIVOT[1];
+/** The neck's own joints, and the corner of the head that lands on the floor. */
+const NECK_BASE: [number, number] = [26, 32.5];
+const NECK_PITCH: [number, number] = [26, 82.3];
+const HEAD_BACK: [number, number] = [-30.4, 157.4];
+const about = (p: readonly [number, number], c: readonly [number, number], a: number) => {
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  return [
+    c[0] + (p[0] - c[0]) * cos - (p[1] - c[1]) * sin,
+    c[1] + (p[0] - c[0]) * sin + (p[1] - c[1]) * cos,
+  ] as [number, number];
+};
+/** A point of the trunk placed on the floor for the pose it is in. */
+const worldAt = (p: readonly [number, number], pose: Pose) => about(p, PIVOT, pose.root!.z || 0);
+const worldY = (pose: Pose, p: readonly [number, number]) => worldAt(p, pose)[1] + pose.root!.dy!;
 /** Where the sole sits, and how far ahead of the hip, for one leg of a pose. */
 const foot = (pose: Pose, side: 'L' | 'R') => {
   const angle = (joint: JointName) => pose[joint]?.angle || 0;
@@ -104,23 +120,13 @@ describe('actions', () => {
     for (const side of ['L', 'R'] as const) expect(Math.abs(soleGap(down, side))).toBeLessThan(2);
   });
 
-  it('rests on the floor when it is on its back instead of hanging above it', () => {
+  it('goes over backwards onto the floor instead of hanging above it', () => {
     // Corners of the trunk: what actually lands when the duck goes over backwards.
     const BODY: [number, number][] = [
       [-47, -39],
       [-46, 42],
       [35, 0],
     ];
-    const PIVOT_X = -6.2;
-    const worldY = (pose: Pose, p: [number, number]) => {
-      const angle = pose.root!.z || 0;
-      return (
-        PIVOT_Y +
-        pose.root!.dy! +
-        (p[0] - PIVOT_X) * Math.sin(angle) +
-        (p[1] - PIVOT_Y) * Math.cos(angle)
-      );
-    };
     let resting = Infinity;
     for (let t = 0; t <= RECOVER_SECONDS; t += 0.05) {
       const pose = poseAt(t, 'recover', LEGS);
@@ -131,6 +137,45 @@ describe('actions', () => {
       if ((pose.root!.z || 0) > 1.4) resting = Math.min(resting, Math.min(...lows) - GROUND);
     }
     expect(resting).toBeLessThan(2);
+  });
+
+  it('levers itself up on the back of its own head', () => {
+    // Its legs are in the air when it is on its back, so the neck is the only thing it can push
+    // with: the head has to reach the floor, and the trunk has to come up off it while the head
+    // stays put. A duck that simply stood back up would fail both halves of this.
+    const head = (pose: Pose) => {
+      const over = about(HEAD_BACK, NECK_PITCH, pose.neckPitch?.angle || 0);
+      return about(over, NECK_BASE, pose.neckBase?.angle || 0);
+    };
+    let pressed = 0;
+    let held = 0;
+    let lift = 0;
+    for (let t = 0; t <= RECOVER_SECONDS; t += 0.05) {
+      const pose = poseAt(t, 'recover', LEGS);
+      const headY = worldY(pose, head(pose));
+      const trunk = Math.min(
+        ...[[-47, -39] as const, [35, 0] as const].map((p) => worldY(pose, p)),
+      );
+      // The head never scrapes through the floor on the way over...
+      expect(headY).toBeGreaterThan(GROUND - 1);
+      // ...and once the body is up on it the head is the contact, holding the trunk clear of
+      // the floor. That press is the whole of the lifting.
+      if (headY < GROUND + 1) {
+        pressed++;
+        held++;
+        lift = Math.max(lift, trunk - GROUND);
+      } else held = 0;
+      expect(held).toBeLessThan(30);
+    }
+    // About a second on its head, holding the trunk a good 20 mm clear of the floor.
+    expect(pressed).toBeGreaterThan(15);
+    expect(lift).toBeGreaterThan(18);
+    // And it is standing as built when the action ends, so the loop does not jump.
+    const end = poseAt(RECOVER_SECONDS + 0.0001, 'recover', LEGS);
+    expect(end.root!.z).toBeCloseTo(0, 5);
+    expect(end.root!.dx).toBeCloseTo(0, 5);
+    expect(end.root!.dy).toBeCloseTo(0, 5);
+    expect(Math.abs(end.hipL!.angle!)).toBeLessThan(1e-3);
   });
 
   it('ends every cycle back where it started, so a loop never jumps', () => {
