@@ -31,6 +31,8 @@ Camera moves are eased and the turn and walk ease in and out, so no beat starts 
 
 While an action plays, the set of parts that is not fitted — the skates, or the feet they replaced — fades out and the camera draws in to the duck, and both come back when the action stops. The walk and skating beats are recorded with that behaviour, so the spare set is only on screen in the beats where nothing is playing.
 
+The module switch waits for the same two things the explode slider does: it is out of reach while an action plays and while the parts are exploded. The skate beat therefore stops the walk three frames before it clicks the switch — the gate opens the moment the action stops, so the swap lands in the pause rather than racing the pose.
+
 The encode fades the first and last frames through the page's own background, so the file loops without a hard cut: the last frame matches the first.
 
 ## Fullscreen in the recording

@@ -199,32 +199,49 @@ let motion: MotionName | 'sequence' = 'sequence';
 let unreadablePalette: string | null = null;
 let loadBaseline = '';
 let exploded = 0;
+/** True while a module is being fitted: the parts are being re-registered, so nothing may move. */
+let moduleBusy = false;
 function toast(s: string) {
   $('#toast').textContent = s;
   $('#toast').classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 3500);
 }
-/** Keep the action button, its menu and the explode gate in step with the viewer. */
-function syncMotion() {
+/**
+ * Keep the controls that must not be used together in step. An action holds a pose over the
+ * parts, so neither spreading them apart nor swapping the set under them may start while it
+ * runs, and each of those two is out of reach while the other is already the case. Fitting a
+ * module is a gate of its own: it re-registers every part in the model, so nothing else may
+ * move until it has landed.
+ */
+function syncControls() {
   const toggle = $<HTMLButtonElement>('#motion-toggle');
   const playing = viewer.playing;
   toggle.classList.toggle('active', !!playing);
-  toggle.disabled = exploded > 0;
-  toggle.title =
-    exploded > 0
+  toggle.disabled = exploded > 0 || moduleBusy;
+  toggle.title = moduleBusy
+    ? '模组载入中，请稍候'
+    : exploded > 0
       ? '零件展开时不播放动作'
       : playing
         ? `停止动作（当前：${playing === 'sequence' ? '循环播放' : MOTION_LABELS[playing]}）`
         : '让它动起来';
   toggle.setAttribute('aria-label', toggle.title);
-  // The other direction of the same gate: spreading the parts while an action runs would pull
-  // them out from under the pose, so the slider stays out of reach until the duck stops.
+  // Spreading the parts while an action runs would pull them out from under the pose, so the
+  // slider stays out of reach until the duck stops.
   const explode = $<HTMLInputElement>('#explode');
   const explodeLabel = document.querySelector<HTMLElement>('label[for="explode"]');
-  explode.disabled = !!playing;
-  explodeLabel?.classList.toggle('disabled', !!playing);
-  if (explodeLabel) explodeLabel.title = playing ? '动作播放时不展开零件' : '';
+  explode.disabled = !!playing || moduleBusy;
+  explodeLabel?.classList.toggle('disabled', !!playing || moduleBusy);
+  if (explodeLabel)
+    explodeLabel.title = playing ? '动作播放时不展开零件' : moduleBusy ? '模组载入中，请稍候' : '';
+  // The module switch is the same bargain from the other side: it re-partitions the parts, and
+  // an action is holding a pose over them. It also waits while they are spread apart, since the
+  // set it would have to lay out on the floor is one of the ones currently off the rig.
+  const moduleToggle = $<HTMLButtonElement>('#module-toggle');
+  const blocked = playing ? '动作播放时不切换模组' : exploded > 0 ? '零件展开时不切换模组' : '';
+  moduleToggle.disabled = moduleBusy || !!blocked;
+  moduleToggle.title = blocked || '装上或拆下轮滑模组';
   document
     .querySelectorAll<HTMLElement>('[data-motion]')
     .forEach((b) => b.classList.toggle('active', motion === b.dataset.motion && !!playing));
@@ -579,17 +596,22 @@ function bind() {
     else motionMenuTimer = setTimeout(hide, 260);
   };
   const playMotion = () => {
+    // The menu is not a disabled control, so the gate on the button has to be said again here.
     if (exploded > 0) {
       toast('零件展开时不播放动作，收起后再试');
       return;
     }
+    if (moduleBusy) {
+      toast('模组载入中，请稍候');
+      return;
+    }
     viewer.play(motion);
-    syncMotion();
+    syncControls();
   };
   $('#motion-toggle').onclick = () => {
     if (viewer.playing) viewer.stopMotion();
     else playMotion();
-    syncMotion();
+    syncControls();
   };
   $('.motion-tools').addEventListener('mouseenter', openMotionMenu);
   $('.motion-tools').addEventListener('mouseleave', () => closeMotionMenu());
@@ -613,7 +635,7 @@ function bind() {
     closeMotionMenu(true);
     toast(motion === 'sequence' ? '循环播放全部动作' : `动作：${MOTION_LABELS[motion]}`);
   });
-  syncMotion();
+  syncControls();
   $('#fit').onclick = () => viewer.view('three-quarter');
   // Feet or skates: the last button on the view row fits the other set. The module is
   // geometry, so the first switch to skates fetches them.
@@ -631,33 +653,33 @@ function bind() {
     });
   };
   const fitModule = async (next: ModuleName) => {
-    moduleToggle.disabled = true;
+    moduleBusy = true;
+    syncControls();
     try {
       await viewer.setModule(next);
       module = next;
       if (!isDemo) localStorage.setItem(MODULE_KEY, module);
-      const playing = motion as MotionName | 'sequence';
-      if (
-        (module === 'skate' && GROUND_MOTIONS.includes(playing as MotionName)) ||
-        (module === 'walk' && SKATE_MOTIONS.includes(playing as MotionName))
-      )
-        viewer.stopMotion();
       syncModule();
-      // The swap can stop the action, which opens the explode gate again.
-      syncMotion();
       drawList();
       update();
       toast(module === 'skate' ? '已换上轮滑模组' : '已换回步行脚');
     } catch (error) {
       toast(`轮滑模组载入失败：${(error as Error).message}`);
     } finally {
-      moduleToggle.disabled = false;
+      moduleBusy = false;
+      syncControls();
     }
   };
   moduleToggle.onclick = () => void fitModule(module === 'skate' ? 'walk' : 'skate');
   module = readModule();
-  void viewer.setModule(module).then(() => {
+  // Fitting the stored module fetches its geometry, which is the same window a swap opens, so
+  // it holds the stage still the same way rather than letting the first click race the load.
+  moduleBusy = true;
+  syncControls();
+  void viewer.setModule(module).finally(() => {
+    moduleBusy = false;
     syncModule();
+    syncControls();
     drawList();
   });
   // Real fullscreen for the stage: the model gets the whole screen, tools included.
@@ -792,7 +814,7 @@ function bind() {
     viewer.explode(x / 100);
     $('#explode-value').textContent = x + '%';
     exploded = x;
-    syncMotion();
+    syncControls();
   };
   $('#hardware').onchange = () => {
     if (isolated) {
@@ -1018,7 +1040,7 @@ async function init() {
           motion = name;
           viewer.play(name);
         }
-        syncMotion();
+        syncControls();
         return viewer.playing;
       },
       setView: (name: string) => viewer.view(name),
