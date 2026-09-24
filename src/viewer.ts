@@ -434,6 +434,10 @@ export class Viewer {
   /** Where the spare set rests, and how tall it is, so the fade can drop it from there. */
   private spareFloor = 0;
   private spareDrop = 0;
+  /** The spare set's own middle, which is what its parts spread away from when they open. */
+  private spareCentre = new THREE.Vector3();
+  /** The floor the duck stands on. Exploding moves parts off it; it does not move it. */
+  private floorY = 0;
   /** The camera's own move between those framings, so it slides instead of cutting. */
   private framingMove: {
     target: THREE.Vector3;
@@ -878,11 +882,17 @@ export class Viewer {
       const mesh = this.meshes.get(id);
       if (mesh) box.expandByObject(mesh);
     }
+    // Whatever the duck is standing on right now is what sets the floor. It is measured before
+    // the empty check, because it is the duck's floor and not the spare set's: it has to hold
+    // even when there is nothing laid out to stand on it.
+    const floor = (this.joints.get('ankleL')?.pivot.y ?? 0) - (this.legs?.L.ankleToSole ?? 25);
+    this.floorY = floor;
     if (box.isEmpty()) return;
     const size = box.getSize(new THREE.Vector3());
     const centre = box.getCenter(new THREE.Vector3());
-    // Whatever the duck is standing on right now is what sets the floor.
-    const floor = (this.joints.get('ankleL')?.pivot.y ?? 0) - (this.legs?.L.ankleToSole ?? 25);
+    // Read in the same frame the explode vectors were measured in, which is this one: the group
+    // is at the origin here, and it is only moved aside on the line after the next.
+    this.spareCentre.copy(centre);
     this.spareFloor = floor - box.min.y;
     // How far it has to go down to be entirely under the floor: that is what takes its shadow.
     this.spareDrop = size.y + 6;
@@ -1264,19 +1274,31 @@ export class Viewer {
     if (this.box.visible) this.box.update();
     this.restage();
   }
-  /** Offsets from the rest position. Re-applied after any pose reset so both can coexist. */
+  /**
+   * Offsets from the rest position. Re-applied after any pose reset so both can coexist.
+   *
+   * Each part spreads away from the centre of the set it belongs to, not from the middle of the
+   * stage. The two sets sit a duck's width apart, so a single origin would drag the spare set
+   * down — the middle of the stage is well above it — and shove the duck forward by the whole
+   * distance to it. Spreading about its own centre leaves each set where it stands and opens it
+   * in place, and neither one's position depends on where the other happens to be parked.
+   */
   private applyExplode() {
     for (const [id, m] of this.meshes) {
-      // The spare set is already apart; spreading it again would just scatter it.
-      if (this.spareIds.has(id)) continue;
-      const v = this.explodeVectors.get(id)!.clone().sub(this.center);
+      const about = this.spareIds.has(id) ? this.spareCentre : this.duckFrame.center;
+      const v = this.explodeVectors.get(id)!.clone().sub(about);
       m.position.copy(this.origins.get(id)!).add(v.multiplyScalar(this.explodeValue * 0.8));
     }
   }
   /**
-   * Drop the shadow floor under the parts as they currently stand and let the shadow camera
-   * cover them. Without this, an exploded assembly keeps casting onto the assembled foot
-   * height, so parts in the air look like they float above their own shadow.
+   * Let the shadow camera cover everything on show, and leave the floor where the duck stands.
+   *
+   * The floor used to follow the lowest visible part, which is the same thing while the assembly
+   * is closed but not once it is open: spreading pushes parts below the soles, and the floor went
+   * down with them, so the duck and the whole spare set ended up hovering over a shadow that was
+   * a hundred millimetres under their feet. The floor is the duck's, so it stays at the duck's.
+   * Parts that spread down past it simply stop being shadowed — there is nothing under the floor
+   * for a shadow to fall on — which is the honest reading of a part that has left the ground.
    */
   private restage() {
     const box = new THREE.Box3();
@@ -1294,7 +1316,7 @@ export class Viewer {
       far: this.key.position.length() + radius * 2 + 400,
     });
     this.key.shadow.camera.updateProjectionMatrix();
-    this.groundMesh.position.y = box.min.y - 0.3;
+    this.groundMesh.position.y = this.floorY - 0.3;
     if (this.lightHint) this.lightHint.position.y = this.groundMesh.position.y + 2;
   }
   light(lighting: Lighting) {
