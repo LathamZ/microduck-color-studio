@@ -11,6 +11,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "palette": "tsx scripts/palette.ts",
+    "models:compress": "tsx scripts/build_meshopt.ts",
     "format": "prettier --write src scripts/*.ts tests *.json *.ts *.md docs/*.md .github/*.yml",
     "format:check": "prettier --check src scripts/*.ts tests *.json *.ts *.md docs/*.md .github/*.yml"
   },
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/three": "0.180.0",
+    "meshoptimizer": "^0.22.0",
     "prettier": "^3.6.2",
     "tsx": "^4.20.0",
     "typescript": "~5.9.3",

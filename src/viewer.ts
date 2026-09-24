@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import {
   ELEVATION_RANGE,
   isFitted,
@@ -760,7 +761,9 @@ export class Viewer {
   }
   /** Fetch one module's geometry and register it. Nothing is shown until it is fitted. */
   private async fetchModule(url: string, module: ModuleName | null) {
-    const gltf = await new GLTFLoader().loadAsync(url);
+    // The shipped GLBs are EXT_meshopt_compression, and the decoder ships inside three, so this
+    // costs no extra request. Geometry is untouched by the encoding, so nothing else changes.
+    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url);
     // The base file carries everything that is on the duck as it stands, feet included.
     const known = module
       ? this.moduleIds(module)
