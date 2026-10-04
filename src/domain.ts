@@ -69,6 +69,12 @@ export type Manifest = {
   parts: Part[];
   displayTriangles: number;
   geometryUrl: string;
+  /**
+   * Names this set of geometry, hashed from the files themselves by the build. It is what lets a
+   * browser keep the model between visits and still fetch it again when the model changes. A
+   * manifest without it is one nothing may be kept against.
+   */
+  geometryRevision?: string;
   /** Geometry for the roller module, fetched only when someone switches to skates. */
   rollerGeometryUrl?: string;
   mobileGeometryUrl?: string;

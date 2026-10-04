@@ -26,3 +26,5 @@ npm run models:compress
 ```
 
 Run it **last**, after every other geometry script — the mobile build reads `microduck.glb` back in, and trimesh cannot read a compressed file. The script refuses to run on a file that is already compressed, and decodes each buffer view back and compares it before writing, so it either produces a verified file or leaves the old one alone. The encoding changes nothing about the mesh: vertex data comes back byte for byte, and the index codec returns the same triangles in the same order with the same winding. `src/viewer.ts` sets the decoder, which ships inside three, so this costs no extra request. Skipping the step is safe — the loader reads an uncompressed GLB either way — it just transfers more.
+
+A build also stamps the manifest with `geometryRevision`, a short hash of the geometry files it names. It is what tells a returning browser whether the copy it kept is still the current one, so the build derives it from the files (`scripts/model-revision.ts`) and it must not be written by hand. The manifest committed under `public/` has no such field; a server that serves it unstamped simply leaves the browser-side cache off.

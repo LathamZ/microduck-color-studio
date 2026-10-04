@@ -126,9 +126,11 @@ export const english: Record<string, string> = {
   整体微调: 'Color groups',
   正在载入装配模型: 'Loading the assembly',
   '正在组装你的小鸭子…': 'Assembling your little duck…',
+  '正在下载模型，约 4 MB，只需一次…': 'Downloading the model, about 4 MB, this once…',
   模型加载失败: 'Could not load model',
   重新加载: 'Try again',
   无法读取模型清单: 'Could not read model manifest',
+  无法下载模型几何体: 'Could not download the model geometry',
   '三维装配模型，拖动旋转，滚轮缩放；也可使用视角按钮':
     '3D assembly. Drag to orbit, scroll to zoom, or use the view buttons.',
   '真实装配模型 · 外观预览': 'Real assembly · Appearance preview',

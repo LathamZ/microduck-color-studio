@@ -2,7 +2,7 @@ import { mobilePreview } from './device';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import {
@@ -26,6 +26,7 @@ import {
   type MotionName,
   type Pose,
 } from './motion';
+import { readGeometry } from './model-cache';
 import { motionJoints, type MotionJointSpec } from './models/active';
 /** How long the spare set takes to come and go, and for the camera to reframe with it. */
 const SPARE_SECONDS = 0.5;
@@ -765,9 +766,16 @@ export class Viewer {
   }
   /** Fetch one module's geometry and register it. Nothing is shown until it is fitted. */
   private async fetchModule(url: string, module: ModuleName | null) {
-    // The shipped GLBs are EXT_meshopt_compression, and the decoder ships inside three, so this
-    // costs no extra request. Geometry is untouched by the encoding, so nothing else changes.
-    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url);
+    // The bytes come through the cache, which is what keeps a second visit from transferring the
+    // whole model again, and the manifest's revision is what decides whether that copy is still
+    // the right one. `parse` takes the same extensions `load` does — the meshopt decoder is
+    // handed to the parser either way — and `load` only ever buffered the file itself.
+    const bytes = await readGeometry(url, this.model.geometryRevision);
+    const gltf = await new Promise<GLTF>((resolve, reject) =>
+      // The shipped GLBs are EXT_meshopt_compression, and the decoder ships inside three, so
+      // this costs no extra request. Geometry is untouched by the encoding.
+      new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parse(bytes, url, resolve, reject),
+    );
     // The base file carries everything that is on the duck as it stands, feet included.
     const known = module
       ? this.moduleIds(module)

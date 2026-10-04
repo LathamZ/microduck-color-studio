@@ -40,6 +40,14 @@ Camera pose, selection, search, isolation, hardware visibility and explode amoun
 
 WebGL PBR uses environment illumination, directional lighting, cast/received shadows, clearcoat and roughness. Smooth curves use angle-aware vertex normals; hard mechanical edges retain their creases. Original source face count is retained. Material definitions are approximations, not calibrated filament measurements. See README for limitations.
 
+## Geometry cache
+
+The display GLBs are the whole transfer budget of this site, and they change far less often than the code around them does. `model-cache.ts` keeps them in Cache Storage between visits; `main.ts` and `viewer.ts` read geometry through it, and the viewer parses the bytes itself rather than handing a URL to the loader.
+
+Whether to download again is decided by `geometryRevision` in the manifest: a hash of the bytes behind the geometry URLs, written in by the `model-revision` plugin in `vite.config.ts` — a middleware on the manifest path in dev, a `closeBundle` hook that rewrites the copied file in a build. The stamp is derived from the files, so it cannot describe anything other than what was deployed. A hand-kept version number is the version that eventually lies, and a cache key that lies outlives the mistake: everyone who visited before keeps the old geometry and never asks for it again.
+
+One cache per revision, named `microduck-color-studio:geometry:<revision>`, makes a hit a hit by construction and the sweep a comparison of names. The prefix is not decoration — GitHub Pages serves every site on an account from one origin, so cleanup deletes only names under this project's own prefix. Storing a `Response` built from the bytes already in hand, rather than `response.clone()`, keeps the entry free of a `Content-Encoding` the browser has already decoded, which is the usual way a Cache Storage entry comes back corrupt. Every storage call is wrapped: a browser that refuses to store costs a download, never a failure. With no revision, or no `caches` at all, the module is a plain fetch — the behaviour everywhere the feature cannot work. The manifest committed under `public/` stays unstamped; the stamp describes a deployed build.
+
 ## Compatibility and boundaries
 
 `schemaVersion: 1` and `modelId` form the compatibility boundary. Breaking ID changes require a new model ID or an explicit migration. Do not silently remap IDs from labels. Group names may be translated; IDs must not.
