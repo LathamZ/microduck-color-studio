@@ -2303,5 +2303,6 @@
   },
   "mobileGeometryUrl": "microduck-mobile.glb",
   "mobileDisplayTriangles": 301594,
-  "rollerGeometryUrl": "microduck-rollers.glb"
+  "rollerGeometryUrl": "microduck-rollers.glb",
+  "geometryRevision": "3eadb13dd3f5"
 }

@@ -204,6 +204,10 @@
     "mobileDisplayTriangles": {
       "type": "integer",
       "minimum": 0
+    },
+    "geometryRevision": {
+      "type": "string",
+      "description": "Names the geometry this manifest points at, hashed from the files themselves by the build. It is what lets a browser keep the model between visits and still fetch it again when the model changes, so it must be derived rather than written by hand. A manifest without it is one nothing may be kept against. The copy committed under public/ has no such field; it is stamped into the served one."
     }
   },
   "required": [

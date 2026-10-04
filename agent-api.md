@@ -115,6 +115,8 @@ The print workflow is independent of the display mesh. No geometry is obtained f
 
 ```ts
 const setup = await api.importPrintModel(bytes, 'my-HD1910.3mf'); // Uint8Array
+// Alternatively, explicitly select the bundled manufacturing sample:
+// const setup = await api.usePrintSample();
 // Inspect source.objects: stable item IDs, original names, dimensions,
 // matches (ranked part candidates with confidence), originalColor and originalMaterial.
 const assignments = setup.assignments;
@@ -135,6 +137,8 @@ const plan = await api.configurePrint(assignments, {
 const zipBytes = await api.exportPrint(); // Uint8Array; no automatic download
 ```
 
+`usePrintSample()` loads the adapter-provided Feetech manufacturing 3MF through the same worker pipeline. Its complete object-ID/name bindings are validated before replacing the current source; model mismatch or a changed sample leaves the previous source intact. It preserves all 47 source instances, binds 45 parts explicitly (including both common ankles and both walking/skating bases), and keeps two supplemental reinforcement plates in independent source finishes. `source.sampleId` is `feetech`; uploaded files use name matching instead. The sample is fetched only on selection, packaged by Vite from the single source file, and is never derived from the display GLB. Source License/Copyright metadata is carried into the exported 3MF and `MODEL-LICENSE.txt`.
+
 ### Object-to-part matching
 
 `source.objects[].matches` ranks printable parts by name similarity: case, separators, file extensions and numeric prefixes are ignored, and an object name that contains a part name still matches it (`ankle_left_v2` → `ankle_left`). Two parts that share a name are both returned with `ambiguous: true`.
@@ -153,7 +157,7 @@ api.getPrintMatches(); // audit: partId, confidence and whether a row is only a 
 
 `planPrint()` returns a deterministic plan without downloading. `exportPrint()` recalculates from current palette state and returns a ZIP containing one color-preserving multi-plate 3MF project, per-instance binary STL files and `print-plan.json`. No supports, source support painting, process profiles or G-code are carried forward. The source's orientation/scale is retained, with bed placement by translation. Oversize objects are rejected, never scaled. Dimensions and spacing are in millimeters; fit checks use axis-aligned footprints and do not predict supports/brims.
 
-Supported inputs and resource limits are described in the README. Source meshes and assignments are session-only. Re-upload after a page reload. Agent browser tools may restrict mutations: respect their policy and use the human upload flow where required. No printer connection or print-start operation exists.
+Supported inputs and resource limits are described in the README. Source meshes and assignments are session-only. Re-upload or explicitly select the sample again after a page reload. Agent browser tools may restrict mutations: respect their policy and use the human upload flow where required. No printer connection or print-start operation exists.
 
 The `{assignments, options}` configuration is described by [`print-settings.schema.json`](https://lathamz.github.io/microduck-color-studio/print-settings.schema.json). Runtime checks additionally enforce source coverage, unique object IDs, exclusive part/finish assignment and build-area fit.
 
