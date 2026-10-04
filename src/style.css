@@ -1817,6 +1817,12 @@ html[lang='en'] .reference-heading {
   flex-wrap: wrap;
   margin: 20px 0;
 }
+.print-source-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 #print-source-name {
   overflow-wrap: anywhere;
   font-size: 12px;

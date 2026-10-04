@@ -4,17 +4,22 @@ import {
   exportPrintPackage,
   type PrintProject,
 } from './print-project';
+import { applyPrintSample } from './print-sample';
 let project: PrintProject | null = null;
 self.onmessage = (event: MessageEvent) => {
   const { id, type, payload } = event.data;
   try {
     if (type === 'load') {
-      const next = readPrintProject(payload.bytes, payload.name, payload.model);
+      const imported = readPrintProject(payload.bytes, payload.name, payload.model);
+      const next = payload.sample
+        ? applyPrintSample(imported, payload.model, payload.sample)
+        : imported;
       project = next;
       self.postMessage({
         id,
         result: {
           name: next.name,
+          sampleId: next.sampleId,
           objects: next.objects.map(({ vertices, triangles, ...object }) => ({
             ...object,
             triangles: triangles.length,

@@ -55,13 +55,14 @@ describe('print model import and color-preserving plate export', () => {
       };
       const plan = planPrint(p, defaults(model), a, opts);
       expect(plan.plates).toHaveLength(2);
-      expect(plan.plates[0].placements[0].x).toBe(preset.left + opts.margin);
+      const centeredX = (preset.left + preset.width - preset.right - p.objects[0].size[0]) / 2;
+      const centeredY = (preset.bottom + preset.depth - preset.top - p.objects[0].size[1]) / 2;
+      expect(plan.plates[0].placements[0].x).toBe(centeredX);
+      expect(plan.plates[0].placements[0].y).toBe(centeredY);
       const zip = unzipSync(exportPrintPackage(p, plan));
       const files = unzipSync(zip['microduck-print-project.3mf']);
       const xml = strFromU8(files['3D/3dmodel.model']);
-      expect(xml).toContain(
-        `1 0 0 0 1 0 0 0 1 ${preset.width * 1.2 + preset.left + opts.margin} ${opts.margin} 0`,
-      );
+      expect(xml).toContain(`1 0 0 0 1 0 0 0 1 ${preset.width * 1.2 + centeredX} ${centeredY} 0`);
       const settings = JSON.parse(strFromU8(files['Metadata/project_settings.config']));
       expect(settings.printer_model).toBe(preset.name);
       expect(settings.printable_area[2]).toBe(`${preset.width}x${preset.depth}`);

@@ -1,16 +1,22 @@
 import { PRINTERS, printerById } from './printers';
 import { MATERIAL_LABELS, MATERIALS, type Manifest, type Palette, type Finish } from './domain';
 import { t } from './i18n';
+import type { PrintSample } from './print-sample';
 import {
   MATCH_ACCEPT,
   MATCH_FLOOR,
   matchAction,
+  initialPrintAssignments,
   type PrintAssignment,
   type PrintObject,
   type PrintOptions,
   type PrintPlan,
 } from './print-project';
-export type PrintSummary = { name: string; objects: Omit<PrintObject, 'vertices' | 'triangles'>[] };
+export type PrintSummary = {
+  name: string;
+  sampleId?: string;
+  objects: Omit<PrintObject, 'vertices' | 'triangles'>[];
+};
 export type PrintSetup = {
   source: PrintSummary | null;
   assignments: PrintAssignment[];
@@ -26,6 +32,7 @@ export type PrintMatchState = {
 };
 export type PrintAPI = {
   load(bytes: Uint8Array, name: string): Promise<PrintSetup>;
+  loadSample(): Promise<PrintSetup>;
   getSetup(): PrintSetup;
   matches(): PrintMatchState[];
   configure(assignments: PrintAssignment[], options: PrintOptions): Promise<PrintPlan>;
@@ -39,7 +46,11 @@ const esc = (s: string) =>
   );
 /** Bare number: every call site writes its own % so the sign can be translated. */
 const percent = (confidence: number) => String(Math.round(confidence * 100));
-export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & { open(): void } {
+export function printUI(
+  model: Manifest,
+  getPalette: () => Palette,
+  sample?: PrintSample,
+): PrintAPI & { open(): void } {
   let worker: Worker | null = null,
     seq = 0,
     source: PrintSummary | null = null,
@@ -48,13 +59,14 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
     width: 256,
     depth: 256,
     height: 256,
-    margin: 10,
-    gap: 8,
+    margin: 20,
+    gap: 10,
     grouping: 'color',
   };
   let selectedPrinter = '';
   /** Objects whose part link the user chose by hand; those never need re-confirming. */
   const manualChoices = new Set<string>();
+  const sampleChoices = new Set<string>();
   const pending = new Map<
     number,
     { resolve: (value: any) => void; reject: (error: Error) => void }
@@ -87,7 +99,7 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
   const dialog = document.createElement('dialog');
   dialog.className = 'print-dialog';
   dialog.setAttribute('aria-labelledby', 'print-title');
-  dialog.innerHTML = `<div class="panel-title"><div><span class="eyebrow">FROM LOOK TO PRINT</span><h2 id="print-title">导出 3D 打印模型</h2></div><button class="icon-button" id="print-close" aria-label="关闭">×</button></div><p class="small-note">上传实际打印用的 3MF（如 HD1910 版本），再关联当前配色。展示模型保持不变。文件仅在浏览器本地处理。</p><div class="print-upload"><label class="button" for="print-source">上传打印模型 .3mf</label><input type="file" id="print-source" accept=".3mf" hidden><span id="print-source-name" data-user-content>—</span></div><p id="print-status" role="status" class="small-note"></p><div id="print-controls" hidden><label class="printer-picker">打印机型号<select id="print-printer"><option value="">请选择打印机</option>${PRINTERS.map((p) => `<option value="${p.id}">${p.name} · ${p.width} × ${p.depth} mm</option>`).join('')}<option value="custom">自定义打印盘</option></select></label><p class="small-note">机型只用于底板尺寸和多盘位置对齐。请在切片软件确认实际喷嘴、耗材和打印工艺。双喷嘴机型保守使用共同可达区域排盘。</p><div class="print-dimensions"><label>打印盘宽度 mm<input id="print-width" type="number" min="20" max="2000" value="256"></label><label>打印盘深度 mm<input id="print-depth" type="number" min="20" max="2000" value="256"></label><label>可用高度 mm<input id="print-height" type="number" min="1" max="2000" value="256"></label><label>边距 mm<input id="print-margin" type="number" min="0" value="10"></label><label>零件间距 mm<input id="print-gap" type="number" min="0" value="8"></label><label>分盘方式<select id="print-grouping"><option value="color">相同材质与颜色同盘</option><option value="part">部件、材质与颜色分盘</option></select></label></div><p class="small-note">保留源模型的打印朝向与尺寸。请按打印机设置可用区域，并为裙边和支撑留空间。</p><div class="print-toolbar"><h3>关联配色</h3><span>零件名会按相似度自动匹配；未匹配的零件按源文件颜色导出。</span></div><div id="print-object-list" class="print-object-list"></div><div id="print-match-warning" class="print-match-warning" hidden><b aria-hidden="true">*</b><div><p id="print-match-warning-text"></p></div></div><div class="print-actions"><button id="print-plan" class="button subtle">预览分盘</button><button id="print-download" class="button primary">下载打印包</button></div><div id="print-plan-preview" class="print-plan-preview"></div><p class="small-note">一个 3MF 项目保留所有盘的颜色和排布，附逐件 STL 与 JSON 清单。切片工艺、支撑涂色和 G-code 不随包导出；请在切片软件中重新设置。丙烯涂色记为后处理，按底材颜色分盘。</p></div>`;
+  dialog.innerHTML = `<div class="panel-title"><div><span class="eyebrow">FROM LOOK TO PRINT</span><h2 id="print-title">导出 3D 打印模型</h2></div><button class="icon-button" id="print-close" aria-label="关闭">×</button></div><p class="small-note">上传自己的打印 3MF，或选择飞特样例模型，再关联当前配色。文件仅在浏览器本地处理。</p><div class="print-upload"><div class="print-source-actions"><label class="button" for="print-source">上传打印模型 .3mf</label><input type="file" id="print-source" accept=".3mf" hidden>${sample && sample.modelId === model.modelId ? `<button class="button subtle" id="print-sample" type="button">${esc(sample.label)}</button>` : ''}</div><span id="print-source-name" data-user-content>—</span></div><p id="print-status" role="status" class="small-note"></p><div id="print-controls" hidden><label class="printer-picker">打印机型号<select id="print-printer" aria-label="打印机型号"><option value="">请选择打印机</option>${PRINTERS.map((p) => `<option value="${p.id}">${p.name} · ${p.width} × ${p.depth} mm</option>`).join('')}<option value="custom">自定义打印盘</option></select></label><p class="small-note">机型只用于底板尺寸和多盘位置对齐。请在切片软件确认实际喷嘴、耗材和打印工艺。双喷嘴机型保守使用共同可达区域排盘。</p><div class="print-dimensions"><label>打印盘宽度 mm<input id="print-width" type="number" min="20" max="2000" value="256"></label><label>打印盘深度 mm<input id="print-depth" type="number" min="20" max="2000" value="256"></label><label>可用高度 mm<input id="print-height" type="number" min="1" max="2000" value="256"></label><label>边距 mm<input id="print-margin" type="number" min="0" value="10"></label><label>零件间距 mm<input id="print-gap" type="number" min="0" value="8"></label><label>分盘方式<select id="print-grouping"><option value="color">相同材质与颜色同盘</option><option value="part">部件、材质与颜色分盘</option></select></label></div><p class="small-note">保留源模型的打印朝向与尺寸。请按打印机设置可用区域，并为裙边和支撑留空间。</p><div class="print-toolbar"><h3>关联配色</h3><span id="print-match-hint">零件名会按相似度自动匹配；未匹配的零件按源文件颜色导出。</span></div><div id="print-object-list" class="print-object-list"></div><div id="print-match-warning" class="print-match-warning" hidden><b aria-hidden="true">*</b><div><p id="print-match-warning-text"></p></div></div><div class="print-actions"><button id="print-plan" class="button subtle">预览分盘</button><button id="print-download" class="button primary">下载打印包</button></div><div id="print-plan-preview" class="print-plan-preview"></div><p class="small-note">一个 3MF 项目保留所有盘的颜色和排布，附逐件 STL 与 JSON 清单。切片工艺、支撑涂色和 G-code 不随包导出；请在切片软件中重新设置。丙烯涂色记为后处理，按底材颜色分盘。</p></div>`;
   document.body.append(dialog);
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => dialog.querySelector<T>(s)!;
   const status = (s: string, error = false) => {
@@ -127,7 +139,7 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
         confidence !== null &&
         !!obj.matches[1] &&
         Math.abs(obj.matches[1].confidence - confidence) < 1e-9;
-      const chosen = manualChoices.has(obj.id);
+      const chosen = manualChoices.has(obj.id) || sampleChoices.has(obj.id);
       const action = matchAction(confidence, {
         linked: !!assignment.partId,
         chosen,
@@ -151,6 +163,8 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
   function hintFor(row: ReturnType<typeof rows>[number]) {
     const { assignment, confidence, chosen } = row;
     if (!assignment.partId) return '';
+    if (sampleChoices.has(assignment.objectId) && !manualChoices.has(assignment.objectId))
+      return '已按样例零件关联，导出时使用当前配色';
     if (chosen) return '已手动选择这个零件，导出时使用它的配色';
     if (confidence === null) return '已手动关联，导出时使用此零件的配色';
     return `已按零件名自动匹配 · 可信度 ${percent(confidence)}%`;
@@ -206,6 +220,11 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
     for (const k of ['width', 'depth', 'height'])
       $<HTMLInputElement>('#print-' + k).disabled = selectedPrinter !== 'custom';
     $('#print-source-name').textContent = source?.name || '—';
+    $('#print-match-hint').textContent = source?.sampleId
+      ? sample?.useSourceFinish
+        ? '样例默认使用白色 PLA／TPU；可在下方选择部件以关联当前配色。'
+        : '样例零件已关联当前配色；额外加固板保留独立配色。'
+      : '零件名会按相似度自动匹配；未匹配的零件按源文件颜色导出。';
     if (!source) return;
     const palette = getPalette();
     $('#print-object-list').innerHTML = rows()
@@ -223,25 +242,33 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
     if (!selectedPrinter) throw new Error(t('请选择打印机'));
     return { palette: getPalette(), assignments, options };
   };
+  async function loadSource(
+    bytes: Uint8Array,
+    name: string,
+    descriptor?: Omit<PrintSample, 'url'>,
+  ) {
+    const next = await request<PrintSummary>('load', { bytes, name, model, sample: descriptor });
+    source = next;
+    assignments = initialPrintAssignments(next.objects, descriptor?.useSourceFinish);
+    manualChoices.clear();
+    sampleChoices.clear();
+    if (next.sampleId) next.objects.forEach((o) => sampleChoices.add(o.id));
+    render();
+    clearPreview();
+    return api.getSetup();
+  }
   const api: PrintAPI & { open(): void } = {
-    async load(bytes, name) {
-      const next = await request<PrintSummary>('load', { bytes, name, model });
-      source = next;
-      assignments = next.objects.map((o) => {
-        const best = o.matches[0];
-        // Always take the best candidate; only names below the floor stay for a human to resolve.
-        return {
-          objectId: o.id,
-          enabled: o.printable,
-          ...(best && best.confidence >= MATCH_FLOOR
-            ? { partId: best.partId }
-            : { finish: { color: o.originalColor, material: o.originalMaterial } }),
-        };
-      });
-      manualChoices.clear();
-      render();
-      clearPreview();
-      return api.getSetup();
+    load(bytes, name) {
+      return loadSource(bytes, name);
+    },
+    async loadSample() {
+      if (!sample || sample.modelId !== model.modelId)
+        throw new Error(t('当前模型没有可用的打印样例。'));
+      const response = await fetch(sample.url);
+      if (!response.ok) throw new Error(t('样例模型加载失败，请重试或上传自己的 3MF。'));
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const { url: _url, ...descriptor } = sample;
+      return loadSource(bytes, sample.name, descriptor);
     },
     getSetup() {
       return structuredClone({ source, assignments, options });
@@ -279,6 +306,18 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
     },
   };
   $('#print-close').onclick = () => dialog.close();
+  const sampleButton = dialog.querySelector<HTMLButtonElement>('#print-sample');
+  if (sampleButton)
+    sampleButton.onclick = () =>
+      void operation(async () => {
+        status('正在读取飞特样例模型…');
+        await api.loadSample();
+        status(
+          sample?.useSourceFinish
+            ? '飞特白模型已载入；请选择打印机并预览分盘。'
+            : '飞特样例已载入，已关联当前配色；请选择打印机并预览分盘。',
+        );
+      });
   $('#print-printer').onchange = () => {
     selectedPrinter = $<HTMLSelectElement>('#print-printer').value;
     const printer = printerById(selectedPrinter);
@@ -338,7 +377,7 @@ export function printUI(model: Manifest, getPalette: () => Palette): PrintAPI & 
     $('#print-plan-preview').innerHTML = plan.plates
       .map(
         (p) =>
-          `<section class="print-plate"><h4><i style="background:${p.color}"></i><span>${p.id} · ${MATERIAL_LABELS[p.material]} · ${p.color}</span></h4><svg role="img" aria-label="分盘俯视图" viewBox="0 0 ${plan.options.width} ${plan.options.depth}"><rect width="100%" height="100%" fill="#edf0ea"/>${p.placements.map((o, i) => `<g><title data-user-content>${esc(o.name)}</title><rect x="${o.x}" y="${plan.options.depth - o.y - o.size[1]}" width="${o.size[0]}" height="${o.size[1]}" fill="${p.color}" stroke="#44584e" stroke-width=".7"/><text x="${o.x + o.size[0] / 2}" y="${plan.options.depth - o.y - o.size[1] / 2}" text-anchor="middle" font-size="7" fill="#13251c" stroke="white" stroke-width=".3" paint-order="stroke">${i + 1}</text></g>`).join('')}</svg><ol>${p.placements.map((o) => `<li data-user-content>${esc(o.name)}</li>`).join('')}</ol></section>`,
+          `<section class="print-plate"><h4><i style="background:${p.color}"></i><span>${p.id} · ${(p.finishes || [{ material: p.material, color: p.color }]).map((f) => MATERIAL_LABELS[f.material] + ' · ' + f.color).join(' + ')}</span></h4><svg role="img" aria-label="分盘俯视图" viewBox="0 0 ${plan.options.width} ${plan.options.depth}"><rect width="100%" height="100%" fill="#edf0ea"/>${p.placements.map((o, i) => `<g><title data-user-content>${esc(o.name)}</title><rect x="${o.x}" y="${plan.options.depth - o.y - o.size[1]}" width="${o.size[0]}" height="${o.size[1]}" fill="${o.finish.color}" stroke="#44584e" stroke-width=".7"/><text x="${o.x + o.size[0] / 2}" y="${plan.options.depth - o.y - o.size[1] / 2}" text-anchor="middle" font-size="7" fill="#13251c" stroke="white" stroke-width=".3" paint-order="stroke">${i + 1}</text></g>`).join('')}</svg><ol>${p.placements.map((o) => `<li data-user-content>${esc(o.name)}</li>`).join('')}</ol></section>`,
       )
       .join('');
   }

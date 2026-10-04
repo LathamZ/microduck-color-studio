@@ -13,6 +13,8 @@ import type {
 export interface ColorStudioAPI {
   readonly version: 1;
   importPrintModel(bytes: Uint8Array, name: string): Promise<PrintSetup>;
+  /** Explicitly choose the active adapter's bundled manufacturing sample. */
+  usePrintSample(): Promise<PrintSetup>;
   getPrintSetup(): Promise<PrintSetup>;
   /** Object-to-part match confidence. Unmatched objects keep their source colors. */
   getPrintMatches(): Promise<PrintMatchState[]>;

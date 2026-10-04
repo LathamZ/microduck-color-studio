@@ -1,0 +1,205 @@
+{
+  "id": "feetech",
+  "name": "mircroduck_feetech_revision.3mf",
+  "label": "使用飞特样例模型",
+  "modelId": "microduck-walk-v1",
+  "useSourceFinish": true,
+  "bindings": {
+    "2": {
+      "name": "上腿加固板.STEP",
+      "partId": "04-03-upper_leg_rigidity_plate"
+    },
+    "4": {
+      "name": "躯干底座.STEP",
+      "partId": "01-04-trunk_base"
+    },
+    "6": {
+      "name": "偏航转横滚.STL",
+      "partId": "02-01-yaw2roll"
+    },
+    "8": {
+      "name": "髋部左.STL",
+      "partId": "03-02-hip_l"
+    },
+    "10": {
+      "name": "neck_颈部.STL",
+      "partId": "07-01-neck"
+    },
+    "12": {
+      "name": "bearing_roll_轴承滚轮.STEP",
+      "partId": "02-04-bearing_roll"
+    },
+    "13": {
+      "name": "偏航转横滚.STL",
+      "partId": "11-01-yaw2roll"
+    },
+    "14": {
+      "name": "neck_颈部.STL",
+      "partId": "07-04-neck"
+    },
+    "15": {
+      "name": "髋部左.STL",
+      "partId": "12-01-hip_l"
+    },
+    "16": {
+      "name": "上腿加固板.STEP",
+      "partId": "13-03-upper_leg_rigidity_plate"
+    },
+    "18": {
+      "name": "right_shell_右壳.STL",
+      "partId": "01-02-right_shell"
+    },
+    "20": {
+      "name": "top_head_shell_头部上壳00.STL",
+      "partId": "10-06-top_head_shell"
+    },
+    "22": {
+      "name": "电机支架.STL",
+      "partId": "10-05-motor_support"
+    },
+    "24": {
+      "name": "电源支架.STL",
+      "partId": "01-06-power_support"
+    },
+    "26": {
+      "name": "偏航横滚运动.STL",
+      "partId": "09-01-yaw_roll_motion"
+    },
+    "28": {
+      "name": "香蕉形PCB锁扣.STL",
+      "partId": "01-03-banana_pcb_locker"
+    },
+    "30": {
+      "name": "左壳.STL",
+      "partId": "01-09-left_shell"
+    },
+    "32": {
+      "name": "walking_base_dual_locks_no_end_tabs_v9.stl",
+      "partId": "15-04-foot_right"
+    },
+    "34": {
+      "name": "sole_right_右脚底.STL",
+      "partId": "15-02-sole_right"
+    },
+    "35": {
+      "name": "walking_base_dual_locks_no_end_tabs_v9.stl",
+      "partId": "06-02-foot_left"
+    },
+    "36": {
+      "name": "sole_right_右脚底.STL",
+      "partId": "06-01-sole_left"
+    },
+    "38": {
+      "name": "右上腿装饰.STL",
+      "partId": "13-04-upper_leg_right"
+    },
+    "39": {
+      "name": "盘 6 (盘 6 (盘 1 (盘 1)))",
+      "partId": "04-01-upper_leg_left"
+    },
+    "41": {
+      "name": "下巴00_修复.STL",
+      "partId": "10-12-jaw"
+    },
+    "43": {
+      "name": "face_part_面部零件00.STL",
+      "partId": "10-02-face_part"
+    },
+    "45": {
+      "name": "noenoeil_眼睛00.STL",
+      "partId": "10-11-noenoeil"
+    },
+    "47": {
+      "name": "腿部.STEP",
+      "partId": "05-01-leg"
+    },
+    "48": {
+      "name": "腿部.STEP",
+      "partId": "14-02-leg"
+    },
+    "50": {
+      "name": "ankle_dual_locks_no_end_slots_v9.stl",
+      "partId": "15-01-ankle_right"
+    },
+    "51": {
+      "name": "ankle_dual_locks_no_end_slots_v9.stl",
+      "partId": "06-04-ankle_left"
+    },
+    "52": {
+      "name": "bearing_roll_轴承滚轮.STEP",
+      "partId": "11-03-bearing_roll"
+    },
+    "54": {
+      "name": "头部下壳.STL",
+      "partId": "10-13-bottom_head_shell"
+    },
+    "56": {
+      "name": "颈部俯仰.STL",
+      "partId": "08-01-neck_pitch"
+    },
+    "58": {
+      "name": "jaw_soft_软下巴00.STL_B",
+      "partId": "10-04-jaw_soft"
+    },
+    "60": {
+      "name": "薄板一侧上腿加固板.STL",
+      "partId": null
+    },
+    "61": {
+      "name": "薄板一侧上腿加固板.STL",
+      "partId": null
+    },
+    "66": {
+      "name": "左轮滑底座_左半_v9.stl",
+      "partId": "16-02-roller_blade"
+    },
+    "69": {
+      "name": "右轮滑底座_左半_v9.stl",
+      "partId": "17-02-roller_blade"
+    },
+    "72": {
+      "name": "soft_mouth_top_软嘴顶部.stl",
+      "partId": "10-10-soft_mouth_top"
+    },
+    "74": {
+      "name": "左轮滑底座_右半_v9.stl",
+      "partId": "16-02-roller_blade"
+    },
+    "75": {
+      "name": "右轮滑底座_右半_v9.stl",
+      "partId": "17-02-roller_blade"
+    },
+    "64:62": {
+      "name": "rim_轮辋.stl",
+      "partId": "16-03-rim"
+    },
+    "64:63": {
+      "name": "tire_轮胎.stl",
+      "partId": "16-04-tire"
+    },
+    "67:62": {
+      "name": "rim_轮辋.stl",
+      "partId": "16-05-rim"
+    },
+    "67:63": {
+      "name": "tire_轮胎.stl",
+      "partId": "16-06-tire"
+    },
+    "68:62": {
+      "name": "rim_轮辋.stl",
+      "partId": "17-03-rim"
+    },
+    "68:63": {
+      "name": "tire_轮胎.stl",
+      "partId": "17-04-tire"
+    },
+    "70:62": {
+      "name": "rim_轮辋.stl",
+      "partId": "17-05-rim"
+    },
+    "70:63": {
+      "name": "tire_轮胎.stl",
+      "partId": "17-06-tire"
+    }
+  }
+}

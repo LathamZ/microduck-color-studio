@@ -964,8 +964,8 @@ async function init() {
     $('#recommend-open').onclick = stock.open;
     let printManager: Promise<ReturnType<typeof import('./print-ui').printUI>> | null = null;
     const printing = () =>
-      (printManager ||= import('./print-ui').then(({ printUI }) =>
-        printUI(model, () => state.palette),
+      (printManager ||= Promise.all([import('./print-ui'), import('./models/feetech-sample')]).then(
+        ([{ printUI }, { feetechSample }]) => printUI(model, () => state.palette, feetechSample),
       ));
     const closeExportMenu = () => {
       $('#export-menu').hidden = true;
@@ -995,6 +995,7 @@ async function init() {
     const api: ColorStudioAPI = {
       version: 1,
       importPrintModel: async (bytes, name) => (await printing()).load(bytes, name),
+      usePrintSample: async () => (await printing()).loadSample(),
       getPrintSetup: async () => (await printing()).getSetup(),
       getPrintMatches: async () => (await printing()).matches(),
       configurePrint: async (assignments, options) =>

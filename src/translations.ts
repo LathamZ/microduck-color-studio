@@ -22,6 +22,23 @@ export const english: Record<string, string> = {
   '上传实际打印用的 3MF（如 HD1910 版本），再关联当前配色。展示模型保持不变。文件仅在浏览器本地处理。':
     'Upload your actual print-ready 3MF (such as the HD1910 version), then link it to this scheme. The display model stays unchanged. Files are processed locally in your browser.',
   '上传打印模型 .3mf': 'Upload print model .3mf',
+  '上传自己的打印 3MF，或选择飞特样例模型，再关联当前配色。文件仅在浏览器本地处理。':
+    'Upload your print 3MF or choose the Feetech sample, then apply your current colors. Files are processed locally in your browser.',
+  使用飞特样例模型: 'Use Feetech sample',
+  '样例默认使用白色 PLA／TPU；可在下方选择部件以关联当前配色。':
+    'The sample starts with white PLA/TPU. Select a part below to use your current colors.',
+  '飞特白模型已载入；请选择打印机并预览分盘。':
+    'White Feetech sample loaded. Choose a printer and preview the plates.',
+  '样例零件已关联当前配色；额外加固板保留独立配色。':
+    'Sample parts use your current colors; the extra reinforcement plates keep independent finishes.',
+  '正在读取飞特样例模型…': 'Loading Feetech sample…',
+  '飞特样例已载入，已关联当前配色；请选择打印机并预览分盘。':
+    'Feetech sample loaded with your current colors. Choose a printer and preview the plates.',
+  '已按样例零件关联，导出时使用当前配色':
+    'Linked to the sample part; export uses your current colors',
+  '当前模型没有可用的打印样例。': 'No print sample is available for this model.',
+  '样例模型加载失败，请重试或上传自己的 3MF。':
+    'Could not load the sample. Retry or upload your own 3MF.',
   '可用宽度 mm': 'Usable width mm',
   '可用深度 mm': 'Usable depth mm',
   '可用高度 mm': 'Usable height mm',

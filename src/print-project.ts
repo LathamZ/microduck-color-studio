@@ -14,6 +14,7 @@ export type PartMatch = {
 };
 export type PrintObject = Mesh & {
   id: string;
+  sourceObjectId?: string;
   name: string;
   size: Vec;
   printable: boolean;
@@ -21,6 +22,8 @@ export type PrintObject = Mesh & {
   matches: PartMatch[];
   originalColor: string;
   originalMaterial: Finish['material'];
+  /** Parts of a source assembly retain their position and are packed together. */
+  assembly?: { id: string; name: string; offset: Vec; size: Vec };
 };
 /** At or above this confidence a match is applied without asking. */
 export const MATCH_ACCEPT = 0.8;
@@ -124,6 +127,8 @@ export function matchPrintObject(name: string, model: Manifest, limit = 3): Part
 export type PrintProject = {
   name: string;
   objects: PrintObject[];
+  sampleId?: string;
+  attribution?: { license?: string; copyright?: string };
   printer?: Record<string, unknown>;
 };
 export type PrintAssignment = {
@@ -132,6 +137,22 @@ export type PrintAssignment = {
   partId?: string;
   finish?: Finish;
 };
+/** Bundled white samples can keep source finishes; ordinary uploads retain matching behavior. */
+export function initialPrintAssignments(
+  objects: Omit<PrintObject, 'vertices' | 'triangles'>[],
+  useSourceFinish = false,
+): PrintAssignment[] {
+  return objects.map((object) => {
+    const best = object.matches[0];
+    return {
+      objectId: object.id,
+      enabled: object.printable,
+      ...(!useSourceFinish && best && best.confidence >= MATCH_FLOOR
+        ? { partId: best.partId }
+        : { finish: { color: object.originalColor, material: object.originalMaterial } }),
+    };
+  });
+}
 export type PrintOptions = {
   printerId?: string;
   width: number;
@@ -149,12 +170,15 @@ export type PrintPlacement = {
   x: number;
   y: number;
   size: Vec;
+  assembly?: PrintObject['assembly'];
 };
 export type PrintPlate = {
   id: number;
   color: string;
   material: Finish['material'];
   placements: PrintPlacement[];
+  /** Present when an assembly requires multiple filament finishes on one plate. */
+  finishes?: { color: string; material: Finish['material'] }[];
 };
 export type PrintPlan = {
   schemaVersion: 1;
@@ -313,23 +337,10 @@ export function readPrintProject(bytes: Uint8Array, name: string, model: Manifes
     if (!output.triangles.length) throw new Error('Object has no printable mesh.');
     return output;
   };
-  const objects = children(child(root, 'build'), 'item').map((item, index) => {
-    const oid = item.getAttribute('objectid') || '';
-    const settings = cfg.get(oid);
-    if (
-      settings &&
-      children(settings, 'part').some((p) => {
-        const subtype = p.getAttribute('subtype');
-        return subtype && subtype !== 'normal_part';
-      })
-    )
-      throw new Error('Modifier/negative volumes must be resolved in the slicer before import.');
-    const resource = children(child(root, 'resources'), 'object').find(
-      (o) => o.getAttribute('id') === oid,
-    );
-    const objectName =
-      (settings && metadata(settings, 'name')) || resource?.getAttribute('name') || 'Object ' + oid;
-    const mesh = transformed(getMesh(main, oid), matrix(item.getAttribute('transform')));
+  const sourceSettings = files['Metadata/project_settings.config']
+    ? JSON.parse(strFromU8(files['Metadata/project_settings.config']))
+    : {};
+  const bounds = (mesh: Mesh) => {
     const min: Vec = [Infinity, Infinity, Infinity],
       max: Vec = [-Infinity, -Infinity, -Infinity];
     for (const v of mesh.vertices)
@@ -337,49 +348,125 @@ export function readPrintProject(bytes: Uint8Array, name: string, model: Manifes
         min[k] = Math.min(min[k], v[k]);
         max[k] = Math.max(max[k], v[k]);
       }
-    const size = max.map((v, k) => v - min[k]) as Vec;
-    if (size.some((v) => !Number.isFinite(v) || v <= 0 || v > 2000))
-      throw new Error('Invalid print dimensions: ' + objectName);
-    // Keep the source printing rotation and scale, only translate each item onto Z=0.
-    mesh.vertices = mesh.vertices.map((v) => v.map((n, k) => n - min[k]) as Vec);
-    const slot = Number((settings && metadata(settings, 'extruder')) || 1) - 1;
-    const sourceSettings = files['Metadata/project_settings.config']
-      ? JSON.parse(strFromU8(files['Metadata/project_settings.config']))
-      : {};
-    let originalColor = sourceSettings.filament_colour?.[slot];
-    const baseResource = children(child(root, 'resources'), 'basematerials').find(
-      (b) => b.getAttribute('id') === resource?.getAttribute('pid'),
+    return { min, max, size: max.map((v, k) => v - min[k]) as Vec };
+  };
+  const objects: PrintObject[] = children(child(root, 'build'), 'item').flatMap((item, index) => {
+    const oid = item.getAttribute('objectid') || '',
+      settings = cfg.get(oid);
+    const parts = children(settings, 'part');
+    if (parts.some((p) => p.getAttribute('subtype') && p.getAttribute('subtype') !== 'normal_part'))
+      throw new Error('Modifier/negative volumes must be resolved in the slicer before import.');
+    const resource = children(child(root, 'resources'), 'object').find(
+      (o) => o.getAttribute('id') === oid,
     );
-    const base = children(baseResource, 'base')[Number(resource?.getAttribute('pindex') || 0)];
-    if (!isColor(originalColor)) originalColor = base?.getAttribute('displaycolor')?.slice(0, 7);
-    const kind = String(
-      sourceSettings.filament_type?.[slot] || base?.getAttribute('name') || 'pla',
-    ).toLowerCase();
-    const originalMaterial = MATERIALS.includes(kind as Finish['material'])
-      ? (kind as Finish['material'])
-      : kind === 'pla-cf'
-        ? 'pla-cf'
+    const objectName =
+      (settings && metadata(settings, 'name')) || resource?.getAttribute('name') || 'Object ' + oid;
+    const components = children(child(resource, 'components'), 'component');
+    // An explicit multi-part build item is an assembly, not a single-material merged mesh.
+    const multipart = components.length > 1;
+    if (
+      multipart &&
+      new Set(components.map((c) => c.getAttribute('objectid'))).size !== components.length
+    )
+      throw new Error('Assembly components require unique part IDs.');
+    const volumes = multipart
+      ? components.map((c) => {
+          const ref = c.getAttributeNS(PROD, 'path');
+          const next = ref ? safePath(ref, main.slice(0, main.lastIndexOf('/') + 1)) : main;
+          const cid = c.getAttribute('objectid') || '';
+          const part = parts.find((p) => p.getAttribute('id') === cid);
+          const leaf = children(child(doc(next).documentElement, 'resources'), 'object').find(
+            (o) => o.getAttribute('id') === cid,
+          );
+          return {
+            cid,
+            part,
+            resource: leaf,
+            name:
+              (part && metadata(part, 'name')) ||
+              leaf?.getAttribute('name') ||
+              objectName + ' / ' + cid,
+            mesh: transformed(
+              transformed(getMesh(next, cid), matrix(c.getAttribute('transform'))),
+              matrix(item.getAttribute('transform')),
+            ),
+          };
+        })
+      : [
+          {
+            cid: oid,
+            part: undefined,
+            resource,
+            name: objectName,
+            mesh: transformed(getMesh(main, oid), matrix(item.getAttribute('transform'))),
+          },
+        ];
+    const allBounds = volumes.map((v) => bounds(v.mesh));
+    const assemblyMin = [0, 1, 2].map((k) => Math.min(...allBounds.map((b) => b.min[k]))) as Vec;
+    const assemblySize = [0, 1, 2].map(
+      (k) => Math.max(...allBounds.map((b) => b.max[k])) - assemblyMin[k],
+    ) as Vec;
+    return volumes.map((v, partIndex) => {
+      const { min, size } = allBounds[partIndex];
+      if (size.some((v) => !Number.isFinite(v) || v <= 0 || v > 2000))
+        throw new Error('Invalid print dimensions: ' + v.name);
+      const slot =
+        Number(
+          (v.part && metadata(v.part, 'extruder')) ||
+            (settings && metadata(settings, 'extruder')) ||
+            1,
+        ) - 1;
+      let originalColor = sourceSettings.filament_colour?.[slot];
+      const baseResource = children(child(root, 'resources'), 'basematerials').find(
+        (b) => b.getAttribute('id') === v.resource?.getAttribute('pid'),
+      );
+      const base = children(baseResource, 'base')[Number(v.resource?.getAttribute('pindex') || 0)];
+      if (!isColor(originalColor)) originalColor = base?.getAttribute('displaycolor')?.slice(0, 7);
+      const kind = String(
+        sourceSettings.filament_type?.[slot] || base?.getAttribute('name') || 'pla',
+      ).toLowerCase();
+      const originalMaterial = MATERIALS.includes(kind as Finish['material'])
+        ? (kind as Finish['material'])
         : 'pla';
-    return {
-      ...mesh,
-      id: 'item-' + index,
-      name: objectName,
-      size,
-      printable: item.getAttribute('printable') !== '0',
-      matches: matchPrintObject(objectName, model),
-      originalColor: isColor(originalColor) ? originalColor : '#F1EFE7',
-      originalMaterial,
-    };
+      return {
+        ...v.mesh,
+        vertices: v.mesh.vertices.map((p) => p.map((n, k) => n - min[k]) as Vec),
+        id: multipart ? `item-${index}-part-${partIndex}` : 'item-' + index,
+        sourceObjectId: multipart ? `${oid}:${v.cid}` : oid,
+        name: v.name,
+        size,
+        printable: item.getAttribute('printable') !== '0',
+        matches: matchPrintObject(v.name, model),
+        originalColor: isColor(originalColor) ? originalColor : '#F1EFE7',
+        originalMaterial,
+        ...(multipart
+          ? {
+              assembly: {
+                id: 'item-' + index,
+                name: objectName,
+                offset: min.map((n, k) => n - assemblyMin[k]) as Vec,
+                size: assemblySize,
+              },
+            }
+          : {}),
+      };
+    });
   });
   if (!objects.length || objects.length > 500)
     throw new Error('Import requires 1–500 build objects.');
-  const sourceSettings = files['Metadata/project_settings.config']
-    ? JSON.parse(strFromU8(files['Metadata/project_settings.config']))
-    : {};
   const printer: Record<string, unknown> = {};
   for (const key of ['printer_model', 'printer_settings_id', 'nozzle_diameter'])
     if (sourceSettings[key] !== undefined) printer[key] = sourceSettings[key];
-  return { name, objects, printer };
+  const sourceMeta = (name: string) =>
+    children(root, 'metadata')
+      .find((m) => m.getAttribute('name') === name)
+      ?.textContent?.trim() || undefined;
+  return {
+    name,
+    objects,
+    printer,
+    attribution: { license: sourceMeta('License'), copyright: sourceMeta('Copyright') },
+  };
 }
 export function planPrint(
   project: PrintProject,
@@ -410,7 +497,7 @@ export function planPrint(
   )
     throw new Error('Invalid build area, margin or spacing.');
   const seen = new Set<string>();
-  const groups = new Map<string, PrintPlacement[]>();
+  const entries: PrintPlacement[] = [];
   const excluded: string[] = [];
   for (const a of assignments) {
     if (typeof a.enabled !== 'boolean' || (a.partId && a.finish))
@@ -430,9 +517,7 @@ export function planPrint(
       throw new Error('Part exceeds build area: ' + obj.name);
     const f = structuredClone(finish);
     f.color = f.color.toUpperCase();
-    const key = f.material + f.color + (grouping === 'part' ? ':' + (a.partId || obj.name) : '');
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push({
+    entries.push({
       objectId: obj.id,
       name: obj.name,
       partId: a.partId,
@@ -440,46 +525,120 @@ export function planPrint(
       x: 0,
       y: 0,
       size: [...obj.size],
+      ...(obj.assembly ? { assembly: structuredClone(obj.assembly) } : {}),
     });
   }
   if (seen.size !== project.objects.length)
     throw new Error('Every source object needs an explicit include/exclude decision.');
+  // Reject partial assemblies: losing a mating material silently changes the manufactured part.
+  for (const obj of project.objects.filter((o) => o.assembly)) {
+    const members = project.objects.filter((o) => o.assembly?.id === obj.assembly!.id);
+    const included = members.filter((o) => entries.some((e) => e.objectId === o.id));
+    if (included.length && included.length !== members.length)
+      throw new Error('Include or exclude every part of assembly: ' + obj.assembly!.name);
+    const first = members[0].assembly!;
+    for (const member of members) {
+      const a = member.assembly!;
+      if (
+        [...a.offset, ...a.size].some((n) => !Number.isFinite(n)) ||
+        a.size.some((n, k) => n <= 0 || n !== first.size[k]) ||
+        a.offset.some((n, k) => n < 0 || n + member.size[k] > a.size[k] + 1e-6)
+      )
+        throw new Error('Invalid assembly bounds: ' + a.name);
+    }
+  }
+  type Unit = {
+    entries: PrintPlacement[];
+    size: Vec;
+    id: string;
+    finishes: { material: Finish['material']; color: string }[];
+  };
+  const units = new Map<string, Unit>();
+  for (const entry of entries) {
+    const id = entry.assembly?.id || entry.objectId;
+    if (!units.has(id))
+      units.set(id, { id, entries: [], size: entry.assembly?.size || entry.size, finishes: [] });
+    const unit = units.get(id)!;
+    unit.entries.push(entry);
+    if (
+      !unit.finishes.some(
+        (f) => f.material === entry.finish.material && f.color === entry.finish.color,
+      )
+    )
+      unit.finishes.push({ material: entry.finish.material, color: entry.finish.color });
+  }
+  const groups = new Map<string, Unit[]>();
+  for (const unit of units.values()) {
+    if (unit.size[0] > maxX - minX || unit.size[1] > maxY - minY || unit.size[2] > height)
+      throw new Error(
+        'Part exceeds build area: ' + (unit.entries[0].assembly?.name || unit.entries[0].name),
+      );
+    const f = unit.entries[0].finish;
+    const key = unit.entries[0].assembly
+      ? 'assembly:' +
+        unit.finishes
+          .map((f) => f.material + f.color)
+          .sort()
+          .join('|') +
+        (grouping === 'part' ? ':' + unit.id : '')
+      : f.material +
+        f.color +
+        (grouping === 'part' ? ':' + (unit.entries[0].partId || unit.entries[0].name) : '');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(unit);
+  }
   const plates: PrintPlate[] = [];
-  for (const entries of groups.values()) {
-    entries.sort(
-      (a, b) =>
-        b.size[1] - a.size[1] || b.size[0] - a.size[0] || a.objectId.localeCompare(b.objectId),
+  for (const units of groups.values()) {
+    units.sort(
+      (a, b) => b.size[1] - a.size[1] || b.size[0] - a.size[0] || a.id.localeCompare(b.id),
     );
     let plate: PrintPlate | undefined,
       x = minX,
       y = minY,
       row = 0;
-    for (const entry of entries) {
-      if (x + entry.size[0] > maxX) {
+    for (const unit of units) {
+      if (x + unit.size[0] > maxX) {
         x = minX;
         y += row + gap;
         row = 0;
       }
-      if (!plate || y + entry.size[1] > maxY) {
+      if (!plate || y + unit.size[1] > maxY) {
         plate = {
           id: plates.length + 1,
-          color: entry.finish.color,
-          material: entry.finish.material,
+          color: unit.finishes[0].color,
+          material: unit.finishes[0].material,
           placements: [],
+          ...(unit.finishes.length > 1 ? { finishes: unit.finishes } : {}),
         };
         plates.push(plate);
         x = minX;
         y = minY;
         row = 0;
       }
-      entry.x = x;
-      entry.y = y;
-      plate.placements.push(entry);
-      x += entry.size[0] + gap;
-      row = Math.max(row, entry.size[1]);
+      for (const entry of unit.entries) {
+        entry.x = x + (entry.assembly?.offset[0] || 0);
+        entry.y = y + (entry.assembly?.offset[1] || 0);
+        plate.placements.push(entry);
+      }
+      x += unit.size[0] + gap;
+      row = Math.max(row, unit.size[1]);
     }
   }
   if (!plates.length) throw new Error('Select at least one print object.');
+  // Translate the complete packed footprint into the center of the reachable
+  // area. All gaps and multipart offsets stay intact; no mesh is rotated/scaled.
+  for (const plate of plates) {
+    const lowX = Math.min(...plate.placements.map((p) => p.x)),
+      lowY = Math.min(...plate.placements.map((p) => p.y)),
+      highX = Math.max(...plate.placements.map((p) => p.x + p.size[0])),
+      highY = Math.max(...plate.placements.map((p) => p.y + p.size[1]));
+    const dx = (minX + maxX - lowX - highX) / 2,
+      dy = (minY + maxY - lowY - highY) / 2;
+    for (const placement of plate.placements) {
+      placement.x += dx;
+      placement.y += dy;
+    }
+  }
   return {
     schemaVersion: 1,
     source: project.name,
@@ -537,40 +696,89 @@ function project3mf(plan: PrintPlan, project: PrintProject): Uint8Array {
     settings: string[] = [],
     plates: string[] = [];
   let nextId = 2;
-  for (const [index, plate] of plan.plates.entries()) {
-    let slot = materials.findIndex((m) => m.color === plate.color && m.material === plate.material);
+  const slotFor = (finish: Finish) => {
+    let slot = materials.findIndex(
+      (m) => m.color === finish.color && m.material === finish.material,
+    );
     if (slot < 0) {
       slot = materials.length;
-      materials.push({ color: plate.color, material: plate.material });
+      materials.push({ color: finish.color, material: finish.material });
     }
+    return slot;
+  };
+  for (const [index, plate] of plan.plates.entries()) {
     const originX = (index % columns) * plan.options.width * 1.2,
       originY = -Math.floor(index / columns) * plan.options.depth * 1.2;
     const instances: string[] = [];
+    const units = new Map<string, PrintPlacement[]>();
     for (const p of plate.placements) {
-      const id = nextId++,
-        obj = project.objects.find((o) => o.id === p.objectId)!;
-      objects.push(
-        `<object id="${id}" type="model" name="${escapeXML(p.name)}" pid="1" pindex="${slot}"><mesh><vertices>${obj.vertices.map((v) => `<vertex x="${v[0]}" y="${v[1]}" z="${v[2]}"/>`).join('')}</vertices><triangles>${obj.triangles.map((t) => `<triangle v1="${t[0]}" v2="${t[1]}" v3="${t[2]}"/>`).join('')}</triangles></mesh></object>`,
-      );
+      const key = p.assembly?.id || p.objectId;
+      if (!units.has(key)) units.set(key, []);
+      units.get(key)!.push(p);
+    }
+    for (const members of units.values()) {
+      const multipart = !!members[0].assembly;
+      const components: string[] = [],
+        parts: string[] = [];
+      let id = 0;
+      for (const p of members) {
+        id = nextId++;
+        const obj = project.objects.find((o) => o.id === p.objectId)!,
+          slot = slotFor(p.finish);
+        objects.push(
+          `<object id="${id}" type="model" name="${escapeXML(p.name)}" pid="1" pindex="${slot}"><mesh><vertices>${obj.vertices.map((v) => `<vertex x="${v[0]}" y="${v[1]}" z="${v[2]}"/>`).join('')}</vertices><triangles>${obj.triangles.map((t) => `<triangle v1="${t[0]}" v2="${t[1]}" v3="${t[2]}"/>`).join('')}</triangles></mesh></object>`,
+        );
+        parts.push(
+          `<part id="${id}" subtype="normal_part"><metadata key="name" value="${escapeXML(p.name)}"/><metadata key="extruder" value="${slot + 1}"/></part>`,
+        );
+        if (multipart)
+          components.push(
+            `<component objectid="${id}" transform="1 0 0 0 1 0 0 0 1 ${p.assembly!.offset.join(' ')}"/>`,
+          );
+      }
+      const p = members[0],
+        name = p.assembly?.name || p.name,
+        slot = slotFor(p.finish);
+      if (multipart) {
+        id = nextId++;
+        objects.push(
+          `<object id="${id}" type="model" name="${escapeXML(name)}"><components>${components.join('')}</components></object>`,
+        );
+      }
+      const x = originX + p.x - (p.assembly?.offset[0] || 0),
+        y = originY + p.y - (p.assembly?.offset[1] || 0);
       builds.push(
-        `<item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 ${originX + p.x} ${originY + p.y} 0" printable="1"/>`,
+        `<item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 ${x} ${y} 0" printable="1"/>`,
       );
       settings.push(
-        `<object id="${id}"><metadata key="name" value="${escapeXML(p.name)}"/><metadata key="extruder" value="${slot + 1}"/><part id="${id}" subtype="normal_part"><metadata key="name" value="${escapeXML(p.name)}"/><metadata key="extruder" value="${slot + 1}"/></part></object>`,
+        `<object id="${id}"><metadata key="name" value="${escapeXML(name)}"/><metadata key="extruder" value="${slot + 1}"/>${parts.join('')}</object>`,
       );
       instances.push(
         `<model_instance><metadata key="object_id" value="${id}"/><metadata key="instance_id" value="0"/><metadata key="identify_id" value="${id}"/></model_instance>`,
       );
     }
+    const label =
+      plate.finishes?.map((f) => f.material + ' ' + f.color).join(' + ') ||
+      plate.material + ' ' + plate.color;
     plates.push(
-      `<plate><metadata key="plater_id" value="${index + 1}"/><metadata key="plater_name" value="${index + 1} ${plate.material} ${plate.color}"/><metadata key="locked" value="false"/><metadata key="filament_map_mode" value="Auto For Flush"/>${instances.join('')}</plate>`,
+      `<plate><metadata key="plater_id" value="${index + 1}"/><metadata key="plater_name" value="${escapeXML(index + 1 + ' ' + label)}"/><metadata key="locked" value="false"/><metadata key="filament_map_mode" value="Auto For Flush"/>${instances.join('')}</plate>`,
     );
   }
-  const model = `<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" xml:lang="en-US" xmlns="${CORE}" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021"><metadata name="Application">BambuStudio-02.06.00.51</metadata><metadata name="Description">Exported by Microduck Color Studio in Bambu-compatible multi-plate format.</metadata><metadata name="BambuStudio:3mfVersion">1</metadata><resources><basematerials id="1">${materials.map((m) => `<base name="${m.material}" displaycolor="${m.color}FF"/>`).join('')}</basematerials>${objects.join('')}</resources><build>${builds.join('')}</build></model>`;
+  const attribution = Object.entries(project.attribution || {})
+    .filter(([, value]) => value)
+    .map(
+      ([key, value]) =>
+        `<metadata name="${key === 'license' ? 'License' : 'Copyright'}">${escapeXML(value!)}</metadata>`,
+    )
+    .join('');
+  const model = `<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" xml:lang="en-US" xmlns="${CORE}" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021"><metadata name="Application">BambuStudio-02.06.00.51</metadata><metadata name="Description">Exported by Microduck Color Studio in Bambu-compatible multi-plate format.</metadata><metadata name="BambuStudio:3mfVersion">1</metadata>${attribution}<resources><basematerials id="1">${materials.map((m) => `<base name="${m.material}" displaycolor="${m.color}FF"/>`).join('')}</basematerials>${objects.join('')}</resources><build>${builds.join('')}</build></model>`;
   // Filament types Bambu Studio / OrcaSlicer understand; appearance slugs never leak into profiles.
   const baseType = (m: Finish['material']) => FILAMENT_TYPES[m];
   const printer = printerById(plan.options.printerId);
   const config = {
+    // Native Bambu readers require a process identifier even when no source
+    // process is copied. Select the actual slicing process in Bambu Studio.
+    print_settings_id: 'Microduck print setup',
     printer_model: printer?.name || 'Custom',
     printer_settings_id: printer ? printer.name + ' 0.4 nozzle' : 'Microduck Custom',
     printer_technology: 'FFF',
@@ -586,6 +794,7 @@ function project3mf(plan: PrintPlan, project: PrintProject): Uint8Array {
     filament_type: materials.map((m) => baseType(m.material)),
     filament_settings_id: materials.map((m) => `Generic ${baseType(m.material)}`),
     filament_diameter: materials.map(() => '1.75'),
+    filament_is_support: materials.map(() => '0'),
     nozzle_diameter: Array.from({ length: printer?.nozzles || 1 }, () => '0.4'),
   };
   return zipSync(
@@ -612,6 +821,13 @@ export function exportPrintPackage(project: PrintProject, plan: PrintPlan): Uint
   const files: Record<string, Uint8Array> = {
     'microduck-print-project.3mf': project3mf(plan, project),
   };
+  if (project.attribution?.license || project.attribution?.copyright)
+    files['MODEL-LICENSE.txt'] = strToU8(
+      `${project.attribution.copyright || ''}\n${project.attribution.license || ''}\n` +
+        (project.attribution.license === 'CC BY-NC-SA 4.0'
+          ? 'https://creativecommons.org/licenses/by-nc-sa/4.0/\n'
+          : ''),
+    );
   for (const plate of plan.plates) {
     const prefix = `plate-${String(plate.id).padStart(2, '0')}-${plate.material}-${plate.color.slice(1)}`;
     for (const p of plate.placements) {
@@ -622,7 +838,7 @@ export function exportPrintPackage(project: PrintProject, plan: PrintPlan): Uint
   }
   files['print-plan.json'] = strToU8(JSON.stringify(plan, null, 2));
   files['README.txt'] = strToU8(
-    '打印包 / Print package\n\n一个 3MF 包含全部打印盘（Bambu Studio / OrcaSlicer 格式），STL 按盘存放。STL 不携带颜色，颜色和材质以 print-plan.json 为准。\nOne multi-plate 3MF project (Bambu Studio / OrcaSlicer format); individual STL files are grouped by plate. STL has no color; see print-plan.json for material and color assignments.\n\n保留源文件的打印旋转和比例，重新平移贴床。不会自动修复模型或更改尺寸。\nSource rotation and scale are retained; objects are translated onto the bed. No automatic repair or rescaling.\n\n请在切片软件中设置打印机、真实耗材、支撑、裙边及工艺，并检查排盘。原工程的支撑涂色、工艺和 G-code 不包含在此包中。\nSet the printer, filament profiles, supports, brim and process in your slicer. Review arrangement before slicing. Source support painting, process profiles and G-code are not preserved.\n\n丙烯涂色属于后处理，按底材颜色分盘；涂色记录保存在清单的 coating 字段。\nAcrylic is post-processing: plates use base filament colors; coating fields record paint accents.\n\n模型版权和许可归原作者，本导出不改变其许可。\nModel rights and licenses remain with their original authors.\n',
+    '打印包 / Print package\n\n一个 3MF 包含全部打印盘（Bambu Studio / OrcaSlicer 格式），STL 按盘存放。STL 不携带颜色，颜色和材质以 print-plan.json 为准。\nOne multi-plate 3MF project (Bambu Studio / OrcaSlicer format); individual STL files are grouped by plate. STL has no color; see print-plan.json for material and color assignments.\n\n保留源文件的打印旋转和比例，重新平移贴床。3MF 保留组合件各材料及相对位置；单独 STL 不携带装配关系。不会自动修复模型或更改尺寸。\nSource rotation and scale are retained; objects are translated onto the bed. Multipart assemblies retain all material volumes and relative offsets in the 3MF. Separate STLs do not carry assembly placement. No automatic repair or rescaling.\n\n请在切片软件中设置打印机、真实耗材、支撑、裙边及工艺，并检查排盘。原工程的支撑涂色、工艺和 G-code 不包含在此包中。\nSet the printer, filament profiles, supports, brim and process in your slicer. Review arrangement before slicing. Source support painting, process profiles and G-code are not preserved.\n\n丙烯涂色属于后处理，按底材颜色分盘；涂色记录保存在清单的 coating 字段。\nAcrylic is post-processing: plates use base filament colors; coating fields record paint accents.\n\n模型版权和许可归原作者，本导出不改变其许可。\nModel rights and licenses remain with their original authors.\n',
   );
   return zipSync(files, { level: 0 });
 }
