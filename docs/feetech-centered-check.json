@@ -1,0 +1,124 @@
+{
+  "source_sha256": "6484f1657de8eac10eec8e5825abfe1c783dd37009b99754c905e2165ea60964",
+  "output_sha256": "046531a907df93c2371403ee0ab82f35581b4721a032a32df346f652271c9a25",
+  "materials": ["PLA", "TPU"],
+  "colors": ["#FFFFFF", "#FFFFFF"],
+  "build_objects": 45,
+  "material_volumes": 49,
+  "pla_volumes": 41,
+  "tpu_volumes": 8,
+  "options": {
+    "printerId": "h2d",
+    "width": 350,
+    "depth": 320,
+    "height": 325,
+    "margin": 20,
+    "gap": 10,
+    "grouping": "color"
+  },
+  "columns": 3,
+  "shared_reachable_area_mm": {
+    "low": [45, 20],
+    "high": [305, 300]
+  },
+  "plates": [
+    {
+      "id": 1,
+      "name": "白色 PLA：硬质零件 1",
+      "objects": ["54", "20", "18", "30", "74", "66", "69", "75"],
+      "footprint_mm": {
+        "low": [66.50781956823613, 56.092976285577706],
+        "high": [283.49218043176387, 263.9070237144223]
+      },
+      "center_mm": [175, 160],
+      "shared_nozzle_fit_and_10mm_spacing_verified": true
+    },
+    {
+      "id": 2,
+      "name": "白色 PLA：硬质零件 2",
+      "objects": [
+        "41",
+        "24",
+        "22",
+        "32",
+        "35",
+        "38",
+        "39",
+        "2",
+        "16",
+        "43",
+        "12",
+        "52",
+        "50",
+        "51"
+      ],
+      "footprint_mm": {
+        "low": [47.65804290000003, 37.40180579999998],
+        "high": [302.34195709999995, 282.5981942]
+      },
+      "center_mm": [175, 160],
+      "shared_nozzle_fit_and_10mm_spacing_verified": true
+    },
+    {
+      "id": 3,
+      "name": "白色 PLA：硬质零件 3",
+      "objects": [
+        "4",
+        "26",
+        "56",
+        "8",
+        "15",
+        "45",
+        "60",
+        "61",
+        "13",
+        "6",
+        "47",
+        "48",
+        "10",
+        "14",
+        "28"
+      ],
+      "footprint_mm": {
+        "low": [47.047127649999965, 111.3614006],
+        "high": [302.95287235, 208.6385994]
+      },
+      "center_mm": [175, 160],
+      "shared_nozzle_fit_and_10mm_spacing_verified": true
+    },
+    {
+      "id": 4,
+      "name": "白色 TPU：脚底与软嘴",
+      "objects": ["58", "34", "36", "72"],
+      "footprint_mm": {
+        "low": [59.51025780000015, 116.1640015],
+        "high": [290.48974219999985, 203.83599850000002]
+      },
+      "center_mm": [175, 160],
+      "shared_nozzle_fit_and_10mm_spacing_verified": true
+    },
+    {
+      "id": 5,
+      "name": "白色 PLA／TPU：组合轮组",
+      "objects": ["64", "67", "68", "70"],
+      "footprint_mm": {
+        "low": [100.00000399999999, 145],
+        "high": [249.999996, 175]
+      },
+      "center_mm": [175, 160],
+      "shared_nozzle_fit_and_10mm_spacing_verified": true
+    }
+  ],
+  "mesh_entries_byte_identical": 45,
+  "component_transforms_unchanged": true,
+  "orientations_scales_unchanged": true,
+  "bambu_native_read_exit_code": 0,
+  "visual_review": {
+    "evidence": "docs/media/feetech-white-plates.png",
+    "view": "XY overview of all five plates",
+    "result": "pass: five centered clusters; separate TPU and assembled wheels",
+    "geometry_changes": "none; source mesh entries preserved",
+    "native_reader_exit_code": 0,
+    "physical_print": "not tested"
+  }
+}

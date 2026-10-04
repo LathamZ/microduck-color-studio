@@ -1,0 +1,67 @@
+{
+  "source_sha256": "c681b1ddff3d587f6281b82699bc6065f35647cdda6d29a040485c6039a6a319",
+  "output_sha256": "3dd92f2bf80cb0154a2a8dba82775a1a69b8f06587329db28dab35c8460d85f4",
+  "materials": ["PLA", "TPU"],
+  "colors": ["#FFFFFF", "#FFFFFF"],
+  "build_objects": 45,
+  "material_volumes": 49,
+  "pla_volumes": 41,
+  "tpu_volumes": 8,
+  "tpu_source_ids": ["34", "36", "58", "63:66", "68:66", "69:66", "71:66", "76"],
+  "plates": [
+    {
+      "id": 1,
+      "name": "白色 PLA：腿部与结构支架",
+      "objects": [
+        "2",
+        "4",
+        "6",
+        "8",
+        "10",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "24",
+        "38",
+        "39",
+        "45",
+        "47",
+        "48",
+        "52",
+        "60",
+        "61"
+      ],
+      "bed_fit_and_8mm_spacing_verified": true
+    },
+    {
+      "id": 2,
+      "name": "白色 PLA：外壳、头部与脚踝",
+      "objects": ["18", "20", "22", "26", "28", "30", "43", "50", "51", "56"],
+      "bed_fit_and_8mm_spacing_verified": true
+    },
+    {
+      "id": 3,
+      "name": "白色 PLA：步行轮滑底座与配件",
+      "objects": ["32", "35", "41", "54", "65", "70", "78", "79"],
+      "bed_fit_and_8mm_spacing_verified": true
+    },
+    {
+      "id": 4,
+      "name": "白色 PLA／TPU：组合轮组",
+      "objects": ["63", "68", "69", "71"],
+      "bed_fit_and_8mm_spacing_verified": true
+    },
+    {
+      "id": 5,
+      "name": "白色 TPU：脚底与软嘴",
+      "objects": ["34", "36", "58", "76"],
+      "bed_fit_and_8mm_spacing_verified": true
+    }
+  ],
+  "mesh_entries_byte_identical": 49,
+  "component_transforms_unchanged": true,
+  "orientations_scales_unchanged": true,
+  "bambu_native_read_exit_code": 0
+}

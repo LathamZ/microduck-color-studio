@@ -1,0 +1,343 @@
+{
+  "schemaVersion": 1,
+  "modelId": "microduck-walk-v1",
+  "name": "飞特白模型 · PLA / TPU",
+  "lighting": {
+    "preset": "studio",
+    "intensity": 1,
+    "azimuth": -35
+  },
+  "surface": {
+    "layers": true
+  },
+  "parts": {
+    "01-01-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-02-right_shell": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-03-banana_pcb_locker": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-04-trunk_base": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-05-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-06-power_support": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-07-np_f970": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-08-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-09-left_shell": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "01-10-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "02-01-yaw2roll": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "02-02-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "02-03-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "02-04-bearing_roll": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "03-01-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "03-02-hip_l": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "04-01-upper_leg_left": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "04-02-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "04-03-upper_leg_rigidity_plate": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "04-04-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "04-05-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "05-01-leg": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "05-02-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "06-01-sole_left": {
+      "color": "#FFFFFF",
+      "material": "tpu"
+    },
+    "06-02-foot_left": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "06-03-seeed_bearing__configuration_default": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "06-04-ankle_left": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "07-01-neck": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "07-02-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "07-03-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "07-04-neck": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "08-01-neck_pitch": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "08-02-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "09-01-yaw_roll_motion": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "09-02-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "09-03-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "09-04-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-01-lens": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-02-face_part": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-03-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-04-jaw_soft": {
+      "color": "#FFFFFF",
+      "material": "tpu"
+    },
+    "10-05-motor_support": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-06-top_head_shell": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-07-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-08-seeed_bearing__configuration_default": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-09-elec_rpi_robot_hat_pcb": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-10-soft_mouth_top": {
+      "color": "#FFFFFF",
+      "material": "tpu"
+    },
+    "10-11-noenoeil": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-12-jaw": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-13-bottom_head_shell": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-14-m12_lens_holder": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-15-pcb__raspberry_pi_zero_2_w": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "10-16-speaker": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "11-01-yaw2roll": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "11-02-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "11-03-bearing_roll": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "11-04-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "12-01-hip_l": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "12-02-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "13-01-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "13-02-seeed_bearing__configuration__22x16x4": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "13-03-upper_leg_rigidity_plate": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "13-04-upper_leg_right": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "13-05-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "14-01-xl330": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "14-02-leg": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "15-01-ankle_right": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "15-02-sole_right": {
+      "color": "#FFFFFF",
+      "material": "tpu"
+    },
+    "15-03-seeed_bearing__configuration_default": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "15-04-foot_right": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "16-01-ankle_l_v1": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "16-02-roller_blade": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "16-03-rim": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "16-04-tire": {
+      "color": "#FFFFFF",
+      "material": "tpu"
+    },
+    "16-05-rim": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "16-06-tire": {
+      "color": "#FFFFFF",
+      "material": "tpu"
+    },
+    "17-01-ankle_r_v1": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "17-02-roller_blade": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "17-03-rim": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "17-04-tire": {
+      "color": "#FFFFFF",
+      "material": "tpu"
+    },
+    "17-05-rim": {
+      "color": "#FFFFFF",
+      "material": "pla"
+    },
+    "17-06-tire": {
+      "color": "#FFFFFF",
+      "material": "tpu"
+    }
+  }
+}

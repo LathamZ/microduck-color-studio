@@ -1,0 +1,111 @@
+{
+  "before_sha256": "1f4dbcb24eac79a00bbb41db78b10a32bd70122879d1a3f41fb1c07b04068391",
+  "after_sha256": "867a3d1f486c680511d3aa09ca8466978cb05b5c8ffbd5db79000b96fc80d560",
+  "build_object_count": 45,
+  "mesh_instance_count": 49,
+  "wheel_mesh_entries_byte_identical": true,
+  "all_mesh_entries_byte_identical": true,
+  "assemblies": [
+    {
+      "assembly_id": "63",
+      "original_mesh_instance_ids": [
+        "63",
+        "67"
+      ],
+      "name": "左前轮",
+      "rim_part_id": "62",
+      "tire_part_id": "66",
+      "filament_slots": [
+        1,
+        8
+      ],
+      "original_rim_rotation_preserved": true,
+      "coaxial": true,
+      "interface_overlap_mm3": 0.00017267422976808248
+    },
+    {
+      "assembly_id": "68",
+      "original_mesh_instance_ids": [
+        "68",
+        "72"
+      ],
+      "name": "左后轮",
+      "rim_part_id": "62",
+      "tire_part_id": "66",
+      "filament_slots": [
+        1,
+        8
+      ],
+      "original_rim_rotation_preserved": true,
+      "coaxial": true,
+      "interface_overlap_mm3": 0.00017267422976808248
+    },
+    {
+      "assembly_id": "69",
+      "original_mesh_instance_ids": [
+        "69",
+        "73"
+      ],
+      "name": "右前轮",
+      "rim_part_id": "62",
+      "tire_part_id": "66",
+      "filament_slots": [
+        1,
+        8
+      ],
+      "original_rim_rotation_preserved": true,
+      "coaxial": true,
+      "interface_overlap_mm3": 0.00017267422976808248
+    },
+    {
+      "assembly_id": "71",
+      "original_mesh_instance_ids": [
+        "71",
+        "74"
+      ],
+      "name": "右后轮",
+      "rim_part_id": "62",
+      "tire_part_id": "66",
+      "filament_slots": [
+        1,
+        8
+      ],
+      "original_rim_rotation_preserved": true,
+      "coaxial": true,
+      "interface_overlap_mm3": 0.00017267422976808248
+    }
+  ],
+  "tpu_profile": "Generic TPU @BBL H2D",
+  "sliced": false,
+  "physically_tested": false,
+  "print_started": false,
+  "bambu_gui_open_verified": true,
+  "bambu_native_read_verified": true,
+  "material_array_lengths_preserved": true,
+  "other_build_transforms_preserved": true,
+  "zip_integrity_verified": true,
+  "test_count": 109,
+  "tests_passed": true,
+  "build_passed": true,
+  "plates": [
+    {
+      "id": "1",
+      "objects": 19
+    },
+    {
+      "id": "2",
+      "objects": 10
+    },
+    {
+      "id": "3",
+      "objects": 8
+    },
+    {
+      "id": "4",
+      "objects": 8
+    }
+  ],
+  "web_export_native_read_verified": true,
+  "cad_snapshot_reviewed": true,
+  "cadgen_version": "0.7.11"
+}
