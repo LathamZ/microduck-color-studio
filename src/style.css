@@ -174,8 +174,8 @@ hr {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr) 286px;
   grid-template-rows: minmax(600px, calc(100vh - 278px)) auto;
-  max-width: 1920px;
-  margin: auto;
+  width: 100%;
+  margin: 0;
 }
 .parts-panel {
   border-right: 1px solid var(--border);
@@ -908,6 +908,23 @@ pre {
   padding: 24px 8px;
   font-size: 12px;
   color: #96a08f;
+}
+/* Desktop fills the browser, with the actual toolbar/tray/footer heights
+   determining the remaining space for the model and scrollable side panels. */
+@media (min-width: 851px) {
+  #app {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100dvh;
+    min-height: 700px;
+  }
+  .workspace {
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 0;
+  }
+  #viewport {
+    min-height: 0;
+  }
 }
 @media (min-width: 1600px) {
   .workspace {

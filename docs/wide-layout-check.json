@@ -1,0 +1,186 @@
+{
+  "css_sha256": "1694f4d8bdfdf17c896d874ed8ddd309b3e5c4f8d072246bc55115b02a381dba",
+  "cause": "1920px workspace cap and fixed viewport-height subtraction",
+  "changes": [
+    "workspace fills available width",
+    "desktop grid reserves actual header, palette tray and footer heights",
+    "desktop canvas tracks its allocated grid cell"
+  ],
+  "desktop_min_height_px": 700,
+  "browser": "isolated Chromium, built production page",
+  "numeric_checks": [
+    "no horizontal overflow",
+    "desktop page fits viewport (700px height floor)",
+    "canvas fills stage and does not overlap palette tray",
+    "palette tray does not overlap footer",
+    "preset cards do not overflow"
+  ],
+  "zh_CN": [
+    {
+      "viewport": {
+        "width": 2560,
+        "height": 1440
+      },
+      "workspace_width": 2560,
+      "page_width": 2560,
+      "page_height": 1440,
+      "stage_height": 1150,
+      "canvas_height": 1150,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "workspace_width": 3440,
+      "page_width": 3440,
+      "page_height": 1440,
+      "stage_height": 1150,
+      "canvas_height": 1150,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 3840,
+        "height": 2160
+      },
+      "workspace_width": 3840,
+      "page_width": 3840,
+      "page_height": 2160,
+      "stage_height": 1870,
+      "canvas_height": 1870,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "workspace_width": 1920,
+      "page_width": 1920,
+      "page_height": 1080,
+      "stage_height": 790,
+      "canvas_height": 790,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "workspace_width": 1440,
+      "page_width": 1440,
+      "page_height": 900,
+      "stage_height": 629,
+      "canvas_height": 629,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "workspace_width": 1280,
+      "page_width": 1280,
+      "page_height": 720,
+      "stage_height": 449,
+      "canvas_height": 449,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "workspace_width": 1024,
+      "page_width": 1024,
+      "page_height": 768,
+      "stage_height": 507,
+      "canvas_height": 507,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "workspace_width": 820,
+      "page_width": 820,
+      "page_height": 1218,
+      "stage_height": 620,
+      "canvas_height": 620,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "workspace_width": 390,
+      "page_width": 390,
+      "page_height": 2925,
+      "stage_height": 560,
+      "canvas_height": 560,
+      "passed": true
+    }
+  ],
+  "en_US": [
+    {
+      "viewport": {
+        "width": 2560,
+        "height": 1440
+      },
+      "workspace_width": 2560,
+      "page_width": 2560,
+      "page_height": 1440,
+      "stage_height": 1150,
+      "canvas_height": 1150,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 3440,
+        "height": 1440
+      },
+      "workspace_width": 3440,
+      "page_width": 3440,
+      "page_height": 1440,
+      "stage_height": 1150,
+      "canvas_height": 1150,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 3840,
+        "height": 2160
+      },
+      "workspace_width": 3840,
+      "page_width": 3840,
+      "page_height": 2160,
+      "stage_height": 1870,
+      "canvas_height": 1870,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "workspace_width": 1920,
+      "page_width": 1920,
+      "page_height": 1080,
+      "stage_height": 790,
+      "canvas_height": 790,
+      "passed": true
+    }
+  ],
+  "page_errors": [],
+  "visual_review": {
+    "evidence": "docs/media/wide-layout-2560.png",
+    "evidence_sha256": "bf0e024a44a16a672173214e34a5221ff76b9cd0e7ea0f2784f8d4ba28fe23c9",
+    "viewport": "2560x1440, zh-CN",
+    "result": "pass: full-width stage, complete model and toolbar, visible palette tray and footer"
+  },
+  "source_photo": "user-provided monitor photo, original retained outside repository"
+}
