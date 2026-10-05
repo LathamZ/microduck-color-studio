@@ -29,12 +29,38 @@ beforeAll(() => {
 }, 60000);
 
 describe('bundled Feetech manufacturing sample', () => {
+  it('imports distinct left/right ankles as a reflected pair with positive winding', () => {
+    const right = sample.objects.find((o) => o.sourceObjectId === '50')!;
+    const left = sample.objects.find((o) => o.sourceObjectId === '51')!;
+    expect(right.name).toContain('ankle_right');
+    expect(left.name).toContain('ankle_left');
+    expect(left.size).toEqual(right.size);
+    expect(left.vertices).toHaveLength(right.vertices.length);
+    for (let i = 0; i < right.vertices.length; i++) {
+      expect(left.vertices[i][0] + right.vertices[i][0]).toBeCloseTo(right.size[0], 6);
+      expect(left.vertices[i][1]).toBeCloseTo(right.vertices[i][1], 6);
+      expect(left.vertices[i][2]).toBeCloseTo(right.vertices[i][2], 6);
+    }
+    const volume = (o: typeof left) =>
+      o.triangles.reduce((sum, [a, b, c]) => {
+        const [u, v, w] = [o.vertices[a], o.vertices[b], o.vertices[c]];
+        return (
+          sum +
+          (u[0] * (v[1] * w[2] - v[2] * w[1]) +
+            u[1] * (v[2] * w[0] - v[0] * w[2]) +
+            u[2] * (v[0] * w[1] - v[1] * w[0])) /
+            6
+        );
+      }, 0);
+    expect(volume(right)).toBeGreaterThan(0);
+    expect(volume(left)).toBeCloseTo(volume(right), 6);
+  });
   it('starts as white PLA/TPU, separates soft parts and exports two materials despite a colored palette', () => {
     const palette = defaults(model);
     palette.parts['15-04-foot_right'] = { color: '#123456', material: 'petg' };
     const assignments = initialPrintAssignments(sample.objects, descriptor.useSourceFinish);
     expect(assignments.every((a) => !a.partId && a.finish?.color === '#FFFFFF')).toBe(true);
-    const softIds = ['34', '36', '58', '72', '64:63', '67:63', '68:63', '70:63'];
+    const softIds = ['34', '36', '58', '69', '66:65', '73:65', '74:65', '75:65'];
     expect(
       sample.objects
         .filter((o) => o.originalMaterial === 'tpu')
@@ -129,22 +155,22 @@ describe('bundled Feetech manufacturing sample', () => {
     expect(bindings['35']).toBe('06-02-foot_left');
     expect(bindings['50']).toBe('15-01-ankle_right');
     expect(bindings['51']).toBe('06-04-ankle_left');
-    expect(bindings['66']).toBe('16-02-roller_blade');
-    expect(bindings['69']).toBe('17-02-roller_blade');
-    expect(bindings['74']).toBe('16-02-roller_blade');
-    expect(bindings['75']).toBe('17-02-roller_blade');
-    expect(new Set(['64', '67', '68', '70'].map((id) => bindings[id + ':62'])).size).toBe(4);
+    expect(bindings['63']).toBe('16-02-roller_blade');
+    expect(bindings['67']).toBe('17-02-roller_blade');
+    expect(bindings['71']).toBe('16-02-roller_blade');
+    expect(bindings['72']).toBe('17-02-roller_blade');
+    expect(new Set(['66', '73', '74', '75'].map((id) => bindings[id + ':64'])).size).toBe(4);
     const wheels = sample.objects.filter((o) => o.assembly);
     expect(wheels).toHaveLength(8);
     expect(new Set(wheels.map((o) => o.assembly!.id)).size).toBe(4);
     expect(
       wheels
-        .filter((o) => o.sourceObjectId?.endsWith(':62'))
+        .filter((o) => o.sourceObjectId?.endsWith(':64'))
         .every((o) => o.originalMaterial === 'pla'),
     ).toBe(true);
     expect(
       wheels
-        .filter((o) => o.sourceObjectId?.endsWith(':63'))
+        .filter((o) => o.sourceObjectId?.endsWith(':65'))
         .every((o) => o.originalMaterial === 'tpu'),
     ).toBe(true);
     expect(sample.objects.filter((o) => o.matches.length)).toHaveLength(47);

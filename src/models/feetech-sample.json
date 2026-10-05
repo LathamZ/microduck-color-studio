@@ -118,11 +118,11 @@
       "partId": "14-02-leg"
     },
     "50": {
-      "name": "ankle_dual_locks_no_end_slots_v9.stl",
+      "name": "ankle_right_dual_locks_v10.stl",
       "partId": "15-01-ankle_right"
     },
     "51": {
-      "name": "ankle_dual_locks_no_end_slots_v9.stl",
+      "name": "ankle_left_dual_locks_v10.stl",
       "partId": "06-04-ankle_left"
     },
     "52": {
@@ -149,55 +149,55 @@
       "name": "薄板一侧上腿加固板.STL",
       "partId": null
     },
-    "66": {
+    "63": {
       "name": "左轮滑底座_左半_v9.stl",
       "partId": "16-02-roller_blade"
     },
-    "69": {
+    "67": {
       "name": "右轮滑底座_左半_v9.stl",
       "partId": "17-02-roller_blade"
     },
-    "72": {
+    "69": {
       "name": "soft_mouth_top_软嘴顶部.stl",
       "partId": "10-10-soft_mouth_top"
     },
-    "74": {
+    "71": {
       "name": "左轮滑底座_右半_v9.stl",
       "partId": "16-02-roller_blade"
     },
-    "75": {
+    "72": {
       "name": "右轮滑底座_右半_v9.stl",
       "partId": "17-02-roller_blade"
     },
-    "64:62": {
+    "73:64": {
       "name": "rim_轮辋.stl",
       "partId": "16-03-rim"
     },
-    "64:63": {
+    "73:65": {
       "name": "tire_轮胎.stl",
       "partId": "16-04-tire"
     },
-    "67:62": {
+    "74:64": {
       "name": "rim_轮辋.stl",
       "partId": "16-05-rim"
     },
-    "67:63": {
+    "74:65": {
       "name": "tire_轮胎.stl",
       "partId": "16-06-tire"
     },
-    "68:62": {
+    "66:64": {
       "name": "rim_轮辋.stl",
       "partId": "17-03-rim"
     },
-    "68:63": {
+    "66:65": {
       "name": "tire_轮胎.stl",
       "partId": "17-04-tire"
     },
-    "70:62": {
+    "75:64": {
       "name": "rim_轮辋.stl",
       "partId": "17-05-rim"
     },
-    "70:63": {
+    "75:65": {
       "name": "tire_轮胎.stl",
       "partId": "17-06-tire"
     }
