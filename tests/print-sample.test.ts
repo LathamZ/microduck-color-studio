@@ -1,5 +1,6 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { setImmediate } from 'node:timers/promises';
 import { unzipSync, strFromU8 } from 'fflate';
 import { defaults, type Manifest } from '../src/domain';
 import { applyPrintSample } from '../src/print-sample';
@@ -17,6 +18,10 @@ const model = JSON.parse(
 ) as Manifest;
 let imported: PrintProject;
 let sample: PrintProject;
+// Large synchronous mesh roundtrips must yield so the runner can process progress RPCs.
+afterEach(async () => {
+  await setImmediate();
+});
 beforeAll(() => {
   imported = readPrintProject(
     new Uint8Array(
@@ -55,10 +60,10 @@ describe('bundled Feetech manufacturing sample', () => {
     expect(volume(right)).toBeGreaterThan(0);
     expect(volume(left)).toBeCloseTo(volume(right), 6);
   });
-  it('starts as white PLA/TPU, separates soft parts and exports two materials despite a colored palette', () => {
+  it('can explicitly keep source white PLA/TPU, separate soft parts and export two materials', () => {
     const palette = defaults(model);
     palette.parts['15-04-foot_right'] = { color: '#123456', material: 'petg' };
-    const assignments = initialPrintAssignments(sample.objects, descriptor.useSourceFinish);
+    const assignments = initialPrintAssignments(sample.objects, true);
     expect(assignments.every((a) => !a.partId && a.finish?.color === '#FFFFFF')).toBe(true);
     const softIds = ['34', '36', '58', '69', '66:65', '73:65', '74:65', '75:65'];
     expect(
@@ -215,14 +220,22 @@ describe('bundled Feetech manufacturing sample', () => {
   });
   it('exports all 49 real meshes with palette colors, source dimensions and model attribution', () => {
     const palette = defaults(model);
+    const assignments = initialPrintAssignments(sample.objects, descriptor.useSourceFinish);
+    expect(assignments.filter((a) => a.partId)).toHaveLength(47);
+    expect(assignments.filter((a) => !a.partId)).toHaveLength(2);
+    for (const object of sample.objects) {
+      const assignment = assignments.find((a) => a.objectId === object.id)!;
+      if (object.matches[0]) expect(assignment.partId).toBe(object.matches[0].partId);
+      else
+        expect(assignment.finish).toEqual({
+          color: object.originalColor,
+          material: object.originalMaterial,
+        });
+    }
+    // Edits after loading the sample must still reach planning and the serialized 3MF.
     palette.parts['15-04-foot_right'] = { color: '#123456', material: 'petg' };
-    const assignments = sample.objects.map((o) => ({
-      objectId: o.id,
-      enabled: o.printable,
-      ...(o.matches[0]
-        ? { partId: o.matches[0].partId }
-        : { finish: { color: o.originalColor, material: o.originalMaterial } }),
-    }));
+    palette.parts['16-03-rim'] = { color: '#ABCDEF', material: 'pla' };
+    palette.parts['16-04-tire'] = { color: '#654321', material: 'tpu' };
     const plan = planPrint(sample, palette, assignments, {
       printerId: 'h2d',
       width: 350,
@@ -233,12 +246,27 @@ describe('bundled Feetech manufacturing sample', () => {
       grouping: 'color',
     });
     expect(plan.plates.flatMap((p) => p.placements)).toHaveLength(49);
+    for (const placement of plan.plates.flatMap((p) => p.placements)) {
+      const assignment = assignments.find((a) => a.objectId === placement.objectId)!;
+      expect(placement.finish).toEqual(
+        assignment.partId ? palette.parts[assignment.partId] : assignment.finish,
+      );
+    }
     expect(
       plan.plates.find((p) => p.placements.some((o) => o.partId === '15-04-foot_right'))?.color,
     ).toBe('#123456');
     const zip = unzipSync(exportPrintPackage(sample, plan));
     const projectFiles = unzipSync(zip['microduck-print-project.3mf']);
     const nativeConfig = JSON.parse(strFromU8(projectFiles['Metadata/project_settings.config']));
+    for (const [color, material] of [
+      ['#123456', 'PETG'],
+      ['#ABCDEF', 'PLA'],
+      ['#654321', 'TPU'],
+    ]) {
+      const slot = nativeConfig.filament_colour.indexOf(color);
+      expect(slot).toBeGreaterThanOrEqual(0);
+      expect(nativeConfig.filament_type[slot]).toBe(material);
+    }
     // Missing process IDs crash native Bambu readers; support flags must cover
     // every filament, including both materials in a wheel assembly.
     expect(nativeConfig.print_settings_id).toBe('Microduck print setup');
@@ -273,8 +301,11 @@ describe('bundled Feetech manufacturing sample', () => {
       expect(result.originalColor).toBe(order[i].finish.color);
       expect(result.originalMaterial).toBe(order[i].finish.material);
       if (original.assembly) {
-        expect(result.assembly?.offset).toEqual(original.assembly.offset);
-        expect(result.assembly?.size).toEqual(original.assembly.size);
+        // Subtracting different plate translations can introduce sub-nanometer rounding.
+        for (let axis = 0; axis < 3; axis++) {
+          expect(result.assembly!.offset[axis]).toBeCloseTo(original.assembly.offset[axis], 9);
+          expect(result.assembly!.size[axis]).toBeCloseTo(original.assembly.size[axis], 9);
+        }
       }
     }
   }, 60000);

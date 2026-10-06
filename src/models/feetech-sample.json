@@ -3,7 +3,7 @@
   "name": "mircroduck_feetech_revision.3mf",
   "label": "使用飞特样例模型",
   "modelId": "microduck-walk-v1",
-  "useSourceFinish": true,
+  "useSourceFinish": false,
   "bindings": {
     "2": {
       "name": "上腿加固板.STEP",

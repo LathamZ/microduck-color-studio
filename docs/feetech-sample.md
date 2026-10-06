@@ -24,7 +24,7 @@ Bambu Studio 原生读取通过；58 项几何检查验证左右反射关系、�
 
 制造源现为全部白色（#FFFFFF）、不上色，仅保留两个耗材槽：1 为 PLA，2 为 Generic TPU。41 个硬材料部件使用 PLA；8 个软材料部件使用 TPU，包括四个轮胎、左右脚底、软嘴和软下巴。独立 TPU 零件单放第 4 盘；四个 PLA 轮辋／TPU 轮胎组合轮组放第 5 盘。原有机械设计、49 份网格、各件朝向和比例逐字节保留；所有独立对象按材料重新分盘并居中平移。候选文件先通过 Bambu Studio 原生读取，再替换制造源。
 
-网页选择飞特样例时，默认使用源文件的白色 PLA／TPU，不随当前彩色方案改变；需要上色时可手动选择关联部件。普通上传文件的配色匹配行为保持原样。完整白模型配色配置见 [`feetech-white.palette.json`](feetech-white.palette.json)，可在编辑器导入；该配置无后处理涂色。当前材料、居中分盘和网格保留检查见 [`feetech-centered-check.json`](feetech-centered-check.json)，排盘脚本为 [`center_feetech_plates.ts`](../scripts/center_feetech_plates.ts)。白材料转换阶段的历史检查为 [`feetech-white-check.json`](feetech-white-check.json)。
+网页选择飞特样例时，47 个有固定对应关系的部件默认关联当前配色方案，使用方案中的颜色和材质；载入后继续修改方案，预览分盘和导出也会读取最新配色。两块额外薄加固板保持源文件的独立白色 PLA 配色。普通上传文件的配色匹配行为保持原样。完整白模型配色配置见 [`feetech-white.palette.json`](feetech-white.palette.json)，可在编辑器导入；该配置无后处理涂色。当前材料、居中分盘和网格保留检查见 [`feetech-centered-check.json`](feetech-centered-check.json)，排盘脚本为 [`center_feetech_plates.ts`](../scripts/center_feetech_plates.ts)。白材料转换阶段的历史检查为 [`feetech-white-check.json`](feetech-white-check.json)。
 
 ![白模型五盘整理](media/feetech-white-plates.png)
 
@@ -70,7 +70,7 @@ Bambu Studio 原生读取通过；58 项几何检查验证左右反射关系、�
 
 ![源模型四盘整理结果](media/feetech-sample-plates.png)
 
-网页下载时会按所选打印机及实际打印配置重新分盘；样例默认全白 PLA／TPU，可手动关联当前配色。源文件的五盘是打开原模型时的整理方式。源 License/Copyright 进入下载的 3MF 及 `MODEL-LICENSE.txt`，模型继续遵循 Pollen Robotics 署名及 CC BY-NC-SA 4.0。
+网页下载时会按所选打印机及实际打印配置重新分盘；样例默认关联当前配色；制造源仍保持全白 PLA／TPU。源文件的五盘是打开原模型时的整理方式。源 License/Copyright 进入下载的 3MF 及 `MODEL-LICENSE.txt`，模型继续遵循 Pollen Robotics 署名及 CC BY-NC-SA 4.0。
 
 核验数据见 [`feetech-sample-check.json`](feetech-sample-check.json)。45 件为封闭网格；源文件的两只上腿装饰和两只腿部件为非封闭网格，未作自动修复。分盘后再次检查实际序列化的世界坐标，网格闭合状态、朝向和尺寸均保留。尚未切片、实物试装或启动打印。
 
